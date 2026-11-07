@@ -12,16 +12,17 @@ These documents are the project source of truth. Preserve the distinction betwee
 
 ## Superpowers workflow
 
-This repository is designed to be worked on with the [Superpowers](https://github.com/obra/superpowers) agentic development workflow.
+This repository vendors the official [obra/superpowers](https://github.com/obra/superpowers) project as a pinned Git submodule. Its skills are exposed through repo-local entries in `.agents/skills/`.
 
-- If Superpowers skills are available, follow the relevant skills instead of improvising a parallel process.
-- For new features or substantial design changes: use brainstorming first, agree on the design, then write or update an implementation plan.
-- Before implementation: use the writing-plans workflow and break work into small, verifiable tasks.
-- For code changes: use test-driven development (write a failing test, implement the smallest change, make it pass, then refactor).
-- During implementation: use the execution workflow, verify each task, and keep progress visible.
-- Before declaring work complete: run the relevant tests/checks and perform a code review.
-- For bugs: reproduce first, investigate the root cause, and add a regression test.
+- At the start of a task, activate and follow the `using-superpowers` skill when it is available.
+- For new features or substantial design changes: use `brainstorming` first, agree on the design, then write or update an implementation plan.
+- Before implementation: use `writing-plans` and break work into small, verifiable tasks.
+- For code changes: use `test-driven-development` (write a failing test, implement the smallest change, make it pass, then refactor).
+- For bugs: use `systematic-debugging`; reproduce first, investigate the root cause, and add a regression test.
+- During implementation: use `executing-plans` or `subagent-driven-development` as appropriate, verifying each task.
+- Before declaring work complete: use `verification-before-completion` and the relevant review skill.
 - Do not skip a workflow step merely to move faster. If a step is genuinely inapplicable, state why briefly.
+- Do not edit vendored upstream skills in place. Add GENESIS-specific guidance here or create a clearly named project skill instead.
 
 ## GENESIS-specific engineering rules
 
