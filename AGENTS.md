@@ -12,7 +12,7 @@ These documents are the project source of truth. Preserve the distinction betwee
 
 ## Superpowers workflow
 
-This repository vendors the official [obra/superpowers](https://github.com/obra/superpowers) project as a pinned Git submodule. Its skills are exposed through repo-local entries in `.agents/skills/`.
+This repository contains a local copy of the official [obra/superpowers](https://github.com/obra/superpowers) skills under `vendor/superpowers/skills/`. Its skills are exposed through repo-local entries in `.agents/skills/`. No submodule initialization or separate pull is required.
 
 - At the start of a task, activate and follow the `using-superpowers` skill when it is available.
 - For new features or substantial design changes: use `brainstorming` first, agree on the design, then write or update an implementation plan.

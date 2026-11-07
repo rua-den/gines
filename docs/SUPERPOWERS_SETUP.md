@@ -1,28 +1,21 @@
 # Superpowers Setup & Workflow
 
-## Included in this repository
+## Included directly in this repository
 
-GENESIS vendors the official [obra/superpowers](https://github.com/obra/superpowers) repository as a Git submodule at `vendor/superpowers`. The upstream version is pinned to commit `22f0b463e7a5e579904dd6211a520321035526f7`.
+GENESIS contains a local copy of the official [obra/superpowers](https://github.com/obra/superpowers) skill library under `vendor/superpowers/`. The included source is pinned to upstream commit `22f0b463e7a5e579904dd6211a520321035526f7`.
 
-Fifteen upstream skills are exposed to Codex through repo-local skill links in `.agents/skills/`. Codex discovers project skills from this directory, so they are available when Codex opens the repository (after the submodule is initialized).
+The complete upstream `skills/` directory, its supporting prompts/references/scripts, the upstream README, and MIT license are committed as ordinary files. Fifteen skills are exposed to Codex through repo-local links in `.agents/skills/`.
 
-## Clone / initialize
+**No Git submodule, separate clone, init command, or recurring pull is required.** A normal clone of GENESIS includes the vendored skill files.
 
-Clone with submodules:
+## Use in Codex
 
-```bash
-git clone --recurse-submodules https://github.com/rua-den/gines.git
-```
+1. Clone or open the GENESIS repository normally.
+2. Open the repository root in Codex.
+3. Start a new session if the skills are not discovered immediately.
+4. The agent should activate `using-superpowers` and follow the relevant workflow skill for the task.
 
-If the repository was already cloned without submodules:
-
-```bash
-git submodule update --init --recursive
-```
-
-Then open the repository root in Codex. If the skills do not appear immediately, restart the Codex session.
-
-> The skills are repo-scoped: this makes them available inside GENESIS without installing them globally for every project. The repository itself contains the submodule reference and skill links; Git must initialize the submodule to populate the actual upstream skill files.
+The skill links point into `vendor/superpowers/skills/`; keep both directories together when moving or copying the project.
 
 ## Included upstream skills
 
@@ -42,36 +35,10 @@ Then open the repository root in Codex. If the skills do not appear immediately,
 - `writing-skills`
 - `diagnosing-superpowers`
 
-## Expected workflow for GENESIS
+## Updating the vendored copy
 
-1. **Understand** — read the project docs and identify confirmed decisions, open questions, and scope risks.
-2. **Bootstrap** — follow `using-superpowers` and select the relevant skill(s).
-3. **Brainstorm** — use the brainstorming skill for new mechanics, systems, or significant changes; agree on a design before coding.
-4. **Plan** — write a concrete implementation plan with small tasks, dependencies, and acceptance criteria.
-5. **Test first** — add or update tests before implementation wherever practical.
-6. **Implement** — make the smallest coherent change; verify each task before moving on.
-7. **Review** — inspect the diff for correctness, scope creep, regressions, and maintainability.
-8. **Report** — state what changed, what was verified, and what remains open. Never imply unrun checks passed.
-
-## Updating upstream
-
-To update the pinned Superpowers version intentionally:
-
-```bash
-git submodule update --remote vendor/superpowers
-git add .gitmodules vendor/superpowers .agents/skills
-git commit -m "chore: update Superpowers"
-```
-
-Review upstream changes before accepting an update. Do not blindly track upstream `main` in production work.
-
-## Scope and recovery rules
-
-- Prefer a working playable prototype over speculative architecture.
-- Keep the first prototype focused on player movement, survival/absorption, and one evolution milestone.
-- When a tool or test fails, diagnose and attempt bounded recovery; do not treat the first failure as a terminal blocker.
-- Stop only for a real external blocker, a required user decision, or a documented quality/safety gate.
+When intentionally updating Superpowers, review the upstream changes and copy the updated `skills/` tree and its supporting files into `vendor/superpowers/`. Then update the pinned upstream commit in this document and commit the changes to GENESIS. Updates are manual and deliberate; the project will not change just because upstream changes.
 
 ## License
 
-Superpowers is distributed under the MIT License. See `vendor/superpowers/LICENSE` after initializing the submodule.
+The upstream MIT license is included at `vendor/superpowers/LICENSE`.
