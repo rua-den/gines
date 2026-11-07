@@ -15,6 +15,8 @@ A solo + AI 2D action Metroidvania about the journey of a new life, from a singl
 - [Development Plan](docs/DEVELOPMENT_PLAN.md) — roadmap, milestones, gates and risks.
 - [Game Design Foundation](docs/GAME_DESIGN_FOUNDATION.md) — vision, pillars, core loop and design direction.
 - [Initial Backlog](docs/BACKLOG.md) — first implementation tasks and acceptance criteria.
+- [Superpowers Setup](docs/SUPERPOWERS_SETUP.md) — install instructions and the agent workflow used for this project.
+- [Agent Instructions](AGENTS.md) — repository-level rules for coding agents.
 
 ## One-sentence vision
 
