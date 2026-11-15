@@ -6,15 +6,15 @@
 
 ## Milestone 0 — Project setup
 
-- [ ] Create Godot project and verify it opens/runs.
+- [x] Create Godot project and verify it opens/runs.
   - Acceptance: project launches into a test scene without errors.
-- [ ] Establish repository structure and naming conventions.
+- [x] Establish repository structure and naming conventions.
   - Acceptance: folders are documented and consistently named.
-- [ ] Configure input actions.
+- [x] Configure input actions.
   - Acceptance: keyboard/controller actions are centrally defined.
-- [ ] Define target resolution, viewport scaling and pixel/HD rendering approach.
+- [x] Define target resolution, viewport scaling and pixel/HD rendering approach.
   - Acceptance: test scene scales correctly across selected window sizes.
-- [ ] Add a minimal README and development notes.
+- [x] Add a minimal README and development notes.
   - Acceptance: a new contributor can run the project using the instructions.
 
 ## Milestone 1 — Player movement

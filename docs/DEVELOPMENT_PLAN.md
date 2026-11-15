@@ -44,7 +44,7 @@ The player does not merely watch biological development. They experience it thro
 | Parents as emotional message | Confirmed | Environmental storytelling |
 | PC first | Confirmed | Steam target |
 | Solo + AI | Confirmed | No fixed deadline |
-| Godot | Proposed | Prototype first; Unity remains an alternative |
+| Godot 4.7.2 | Confirmed | Engine pinned 4.7.2, decided 2026-11-15 by the owner (Milestone 0); Unity no longer the fallback |
 | Frame-by-frame 2D art | Confirmed direction | Validate production cost |
 | 4–6 hour initial scope | Proposed | MVP target |
 | 8–12 hour expansion | Open | Only if core loop and production justify it |
@@ -311,7 +311,7 @@ Emotional target: happiness mixed with a little sadness — the journey inside t
 
 ### Initial technical direction
 
-- Engine: Godot prototype; Unity remains an alternative.
+- Engine: Godot 4.7.2 (confirmed 2026-11-15 by the owner; Milestone 0).
 - Camera: 2D HD side-scrolling.
 - Art: 2D frame-by-frame direction.
 - Animation: evaluate modular animation and reusable components to control production cost.
