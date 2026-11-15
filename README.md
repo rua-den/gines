@@ -7,7 +7,7 @@ A solo + AI 2D action Metroidvania about the journey of a new life, from a singl
 ## Project status
 
 **Stage:** Pre-production  
-**Current milestone:** Phase 0 — Foundation & Pre-production  
+**Current milestone:** Phase 0 — Foundation & Pre-production (Milestone 0 Godot 4.7.2 setup done 2026-11-15, in review)
 **Initial target:** A 4–6 hour PC game, with scope validated through a vertical slice.
 
 ## Documentation
@@ -19,6 +19,12 @@ A solo + AI 2D action Metroidvania about the journey of a new life, from a singl
 - [Initial Backlog](docs/BACKLOG.md) — first implementation tasks and acceptance criteria.
 - [Superpowers Setup](docs/SUPERPOWERS_SETUP.md) — repo-local Superpowers installation and workflow.
 - [Agent Instructions](AGENTS.md) — repository-level rules for coding agents.
+
+## Development
+
+The game lives in [`game/`](game/README.md) (Godot 4.7.2). See
+[game/README.md](game/README.md) for how to install, run and verify the
+project.
 
 ## One-sentence vision
 
