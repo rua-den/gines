@@ -14,6 +14,8 @@ A solo + AI 2D action Metroidvania about the journey of a new life, from a singl
 
 - [Development Plan](docs/DEVELOPMENT_PLAN.md) — roadmap, milestones, gates and risks.
 - [Game Design Foundation](docs/GAME_DESIGN_FOUNDATION.md) — vision, pillars, core loop and design direction.
+- [Creative Exploration Plan](docs/CREATIVE_EXPLORATION_PLAN.md) — Muse AI creative track, review criteria and first art milestone.
+- [Muse Workspace](creative/muse/README.md) — instructions for Muse, briefs, output folders and concept naming.
 - [Initial Backlog](docs/BACKLOG.md) — first implementation tasks and acceptance criteria.
 - [Superpowers Setup](docs/SUPERPOWERS_SETUP.md) — repo-local Superpowers installation and workflow.
 - [Agent Instructions](AGENTS.md) — repository-level rules for coding agents.
@@ -29,3 +31,4 @@ Play through the development of a human life inside the mother's womb: explore a
 - Label decisions as **Confirmed**, **Proposed**, **Open**, or **Risk**.
 - Keep the scope realistic for a solo developer working with AI.
 - Every milestone must produce something testable.
+- Treat Muse outputs as explorations until the project owner explicitly approves a direction.

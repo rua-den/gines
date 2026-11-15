@@ -10,6 +10,18 @@ Before making changes, read:
 
 These documents are the project source of truth. Preserve the distinction between **Confirmed**, **Proposed**, **Open**, and **Risk** decisions. Do not silently turn proposals into requirements.
 
+## Creative collaboration (Muse AI)
+
+The Muse workspace lives in `creative/muse/`. Start with `creative/muse/README.md` and the relevant brief before generating or organizing concepts.
+
+- Save new visual explorations under `creative/muse/outputs/` using the documented category folders and concept-ID naming convention.
+- Preserve original outputs and prompts; create a new version rather than overwriting.
+- Keep concept notes with useful outputs, including visual intent, gameplay hypotheses, strengths, risks and next iteration.
+- Treat generated content as exploration until the project owner explicitly approves it.
+- Do not label concepts Approved direction or update official design decisions without explicit approval.
+- Favor distinct, readable and reproducible 2D concepts; account for solo-development animation and asset costs.
+- Do not imitate the recognizable style or assets of named reference games.
+
 ## Superpowers workflow
 
 This repository contains a local copy of the official [obra/superpowers](https://github.com/obra/superpowers) skills under `vendor/superpowers/skills/`. Its skills are exposed through repo-local entries in `.agents/skills/`. No submodule initialization or separate pull is required.
