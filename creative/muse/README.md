@@ -47,8 +47,8 @@ Current art direction is exploratory: 2D, organic, mysterious, beautiful, vibran
 - `outputs/character/` — protagonist silhouettes, body forms and evolution lineups.
 - `outputs/environments/` — regions, landmarks, organic architecture and backgrounds.
 - `outputs/creatures/` — friendly, neutral, hostile organisms, predators and bosses.
-- `outputs/gameplay/ ` — visual explorations that communicate mechanics, abilities, interactions or transformation.
-- `outputs/ui/ ` — HUD, menus, evolution screens and iconography.
+- `outputs/gameplay/` — visual explorations that communicate mechanics, abilities, interactions or transformation.
+- `outputs/ui/` — HUD, menus, evolution screens and iconography.
 - `outputs/experiments/` — unclassified or experimental ideas.
 
 If a category is not relevant, do not force an output into it.
