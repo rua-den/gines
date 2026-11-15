@@ -1,11 +1,11 @@
-# GENESIS — Development Plan v0.1
+# GENESIS — Development Plan v0.2
 
 **Working title:** GENESIS — The Journey Before Life  
 **Genre:** 2D side-scrolling Action Metroidvania  
 **Development model:** Solo + AI  
 **Target platform:** PC / Steam first; consoles may follow  
 **Initial scope target:** 4–6 hours  
-**Status:** Initial plan; validate through prototyping
+**Status:** Pre-production plan; validate through creative exploration and prototyping
 
 ---
 
@@ -63,27 +63,37 @@ Do not treat every brainstorm answer as a mandatory feature. The prototype and v
 
 **Prove the gameplay → prove evolution → prove the emotional experience → expand the world → polish and release.**
 
+Two tracks run in parallel during pre-production:
+
+- **Creative track — project owner + Muse AI:** visual exploration, character evolution concepts, environments, creatures, moodboards and visual experiments.
+- **Design track — project owner + ChatGPT:** gameplay systems, world structure, narrative, production feasibility and decisions.
+
+The creative track supplies possibilities, not automatic requirements. Promising concepts are reviewed for gameplay value, consistency, emotional impact and solo-production cost before being promoted into official design.
+
 Do not build all developmental stages, evolution branches, enemies or animation sets before validating the core loop.
 
-### Phase 0 — Foundation & pre-production
+### Phase 0 — Foundation & creative pre-production
 
-**Goal:** Turn the interview results into a coherent, buildable design.
+**Goal:** Turn the interview results into a coherent, buildable design and discover a visual direction worth prototyping.
 
 Deliverables:
 - Game Design Foundation
 - Core gameplay loop specification
 - Evolution system specification
 - World and stage structure
-- Art direction reference / Art Bible
+- Creative Exploration Plan and Muse briefs
+- Initial moodboards and protagonist evolution concepts
+- Art direction reference / Art Bible (after review, not assumed from raw generations)
 - Technical architecture proposal
 - Initial production backlog
 - Risk register
 
 Exit criteria:
-- Core loop is defined.
+- Core loop is defined well enough to prototype.
 - Initial evolution path is defined.
 - MVP scope is agreed.
 - Major open decisions are explicitly recorded.
+- A promising, reviewable visual direction exists; a fully finished Art Bible is not required before prototyping.
 
 ### Phase 1 — Core prototype
 
@@ -307,6 +317,7 @@ Emotional target: happiness mixed with a little sadness — the journey inside t
 - Animation: evaluate modular animation and reusable components to control production cost.
 - Localization: English first, but design text systems for additional languages from the beginning.
 - AI: assist with concept art, references, code, audio exploration, testing and production support.
+- Muse AI: use for visual exploration and concept iteration; keep prompts and outputs in `creative/muse/`.
 
 ### Technical prototype requirements
 
@@ -335,6 +346,7 @@ Avoid complex infrastructure before a gameplay requirement exists.
 | Resource system complexity | Validate distinct resource purposes before implementing all types |
 | Permanent evolution softlocks | Ensure viable progression across builds |
 | AI-generated art inconsistency | Establish an Art Bible and review every asset |
+| Concept generation creates uncontrolled scope | Treat concepts as exploration; approve only after gameplay and cost review |
 | Overengineering | Build only what the current milestone needs |
 | Solo development burnout | Use milestone-based progress, no artificial deadline |
 
@@ -357,13 +369,23 @@ Keep decisions classified as:
 - **Open** — needs a future decision.
 - **Risk** — may threaten quality, feasibility or progression.
 
+Creative concepts have their own statuses: Exploration, Shortlisted, Candidate, Approved direction and Superseded. Only the project owner can approve a direction.
+
 ---
 
 ## 10. Immediate next step
 
-Start Phase 0 and prepare the first playable prototype specification.
+Run the first creative exploration milestone while we continue defining the core gameplay:
 
-The first question to prove:
+1. Compare visual identity directions.
+2. Explore the protagonist evolution lineup.
+3. Explore 2–3 first-region concepts.
+4. Explore a small set of organisms with behavior hypotheses.
+5. Review the concepts and select what deserves refinement.
+
+Then prepare the first playable prototype specification.
+
+The first gameplay question to prove:
 
 *Is it fun to be a tiny living organism, explore, absorb, survive and evolve into something stronger?*
 
