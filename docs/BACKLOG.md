@@ -19,17 +19,17 @@
 
 ## Milestone 1 — Player movement
 
-- [ ] Create player scene and controller.
+- [x] Create player scene and controller.
   - Acceptance: player can move in a bounded test environment.
-- [ ] Implement swimming movement.
+- [x] Implement swimming movement.
   - Acceptance: acceleration, deceleration and directional control feel predictable.
-- [ ] Implement crawling.
+- [x] Implement crawling.
   - Acceptance: player can move along a test surface.
-- [ ] Prototype surface gripping.
+- [x] Prototype surface gripping.
   - Acceptance: player can attach, remain attached and detach intentionally.
-- [ ] Add collision and environment boundaries.
+- [x] Add collision and environment boundaries.
   - Acceptance: no unintended tunneling or getting stuck in the test area.
-- [ ] Add basic camera follow.
+- [x] Add basic camera follow.
   - Acceptance: player remains framed without distracting camera motion.
 
 ## Milestone 2 — Absorption & survival

@@ -7,7 +7,7 @@ A solo + AI 2D action Metroidvania about the journey of a new life, from a singl
 ## Project status
 
 **Stage:** Pre-production  
-**Current milestone:** Phase 0 — Foundation & Pre-production (Milestone 0 Godot 4.7.2 setup done 2026-11-15, in review)
+**Current milestone:** Phase 0 — Foundation & Pre-production (Milestone 0 merged 2026-11-15; Milestone 1 player movement in review)
 **Initial target:** A 4–6 hour PC game, with scope validated through a vertical slice.
 
 ## Documentation
