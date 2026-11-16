@@ -1,8 +1,9 @@
 # GENESIS — Godot project
 
-Milestone 0 setup. Godot **4.7.2** (stable). The project opens and launches
-into a test scene with no gameplay yet — this folder is scaffolding for the
-Milestones 1+ prototype.
+Milestone 0 setup + Milestone 1 player movement. Godot **4.7.2**
+(stable). The project opens and launches into the Milestone 0 test
+scene; the movement test scene (`res://scenes/movement_test.tscn`)
+is where the player can actually move.
 
 ## Required version
 
@@ -26,8 +27,19 @@ godot --editor --path game
 # Play the main scene (the Milestone 0 test scene)
 godot --path game
 
+# Play the movement test room (Milestone 1): swim, crawl, grip
+godot --path game res://scenes/movement_test.tscn
+
 # Headless smoke check: loads the test scene, prints [M0] READY, exits 0
 godot --headless --audio-driver Dummy --path game res://scenes/test_scene.tscn --quit-after 5
+
+# Headless smoke check for the movement scene (prints [M1] READY, exits 0)
+godot --headless --audio-driver Dummy --path game res://scenes/movement_test.tscn --quit-after 5
+
+# Demo autopilot: drives the player through swim -> crawl -> grip ->
+# detach -> camera follow and saves 4 screenshots, then quits
+xvfb-run -a -s "-screen 0 960x540x24" godot --audio-driver Dummy --path game \
+  res://scenes/movement_test.tscn -- --m1-demo --outdir=/tmp/m1
 ```
 
 The main scene is `res://scenes/test_scene.tscn`. It shows a scaling
@@ -49,9 +61,17 @@ game/
   README.md            This file
   scenes/              .tscn scenes (snake_case, e.g. test_scene.tscn)
   scripts/             .gd scripts (snake_case, 1:1 with their scene where applicable)
+  shaders/             .gdshader files (e.g. body_rim.gdshader)
   assets/              Imported art/audio/fonts, grouped by type
   resources/           .tres data resources (balance, evolution data, ...)
 ```
+
+Movement files (Milestone 1): `scenes/player.tscn` +
+`scripts/player.gd` (SWIM / CRAWL / GRIP controller),
+`scripts/player_visual.gd` (CHR-002 stage 2 look, ported from the
+EXP-001 experiment), `scripts/cilia.gd` (procedural cilia),
+`scenes/movement_test.tscn` + `scripts/movement_test.gd` (test room,
+camera, HUD, demo autopilot).
 
 Empty folders carry a `.gitkeep` so the layout survives a fresh clone.
 `.godot/` (editor cache) is gitignored; `.import` files **are** committed.
@@ -75,6 +95,7 @@ Empty folders carry a `.gitkeep` so the layout survives a fresh clone.
 | `move_up` | W / Up | Left stick up, D-pad up |
 | `move_down` | S / Down | Left stick down, D-pad down |
 | `interact` | E / Space | South button (A / Cross) |
+| `grip` | Shift | West button (X / Square) |
 | `pause` | Esc / P | Start |
 
 Game code must use `Input.is_action_pressed("...")` /
