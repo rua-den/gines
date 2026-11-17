@@ -154,8 +154,9 @@ func _physics_process(delta: float) -> void:
 			if grip_pressed and _grip_cooldown <= 0.0:
 				_grip_cooldown = GRIP_COOLDOWN
 				_set_state(State.SWIM)
-			elif dir.dot(-grip_normal) > 0.5:
-				# Pushing away from the surface detaches.
+			elif dir.dot(grip_normal) > 0.5:
+				# Pushing away from the surface (along its outward
+				# normal) detaches; pushing into it keeps the grip.
 				_grip_cooldown = GRIP_COOLDOWN
 				_set_state(State.SWIM)
 			elif not (is_on_floor() or is_on_wall() or is_on_ceiling()):

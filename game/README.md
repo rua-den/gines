@@ -16,6 +16,21 @@ is where the player can actually move.
   creative experiments in `creative/muse/experiments/godot-style-test/`
   — do not point this project at it.
 
+## First run on a fresh clone
+
+`.godot/` (the editor cache) is gitignored, so a fresh clone has no
+global class cache yet. Until the project has been imported once,
+scenes that use `class_name` types (e.g. `PlayerController` in the
+movement test) fail with `Could not find type "PlayerController"`.
+Import once, from the repository root:
+
+```sh
+godot --headless --path game --import
+```
+
+(Opening the project in the editor once does the same thing.) After
+that, every command below works.
+
 ## Run it
 
 From the repository root (replace `godot` with the path to the 4.7.2 binary):
@@ -42,6 +57,12 @@ xvfb-run -a -s "-screen 0 960x540x24" godot --audio-driver Dummy --path game \
   res://scenes/movement_test.tscn -- --m1-demo --outdir=/tmp/m1
 ```
 
+```sh
+# Regression check: grip detach direction (prints ALL PASS, exits 0)
+godot --headless --audio-driver Dummy --path game \
+  --script res://tests/grip_detach_check.gd
+```
+
 The main scene is `res://scenes/test_scene.tscn`. It shows a scaling
 marker layout and a live input readout. Pressing `Esc`/`P` toggles a
 PAUSED label. In screenshot mode it feeds two real key events (D, E)
@@ -62,6 +83,7 @@ game/
   scenes/              .tscn scenes (snake_case, e.g. test_scene.tscn)
   scripts/             .gd scripts (snake_case, 1:1 with their scene where applicable)
   shaders/             .gdshader files (e.g. body_rim.gdshader)
+  tests/               Headless regression checks (run with --script)
   assets/              Imported art/audio/fonts, grouped by type
   resources/           .tres data resources (balance, evolution data, ...)
 ```
