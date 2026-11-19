@@ -1,11 +1,11 @@
 shader_type canvas_item;
 
 // Rim-light + soft-edge shader for the stage-2 membrane body.
-// The body texture is a radial teal gradient; this shader carves the
+// The body texture is a warm coral gradient; this shader carves the
 // circular silhouette, adds a bright crescent on the light side
 // (upper-left) and a soft top gloss. No painted outline is baked in.
 
-uniform vec4 rim_color : source_color = vec4(0.78, 0.95, 0.90, 1.0);
+uniform vec4 rim_color : source_color = vec4(1.00, 0.88, 0.82, 1.0);
 uniform float rim_width : hint_range(0.0, 0.5) = 0.22;
 uniform vec2 light_dir = vec2(-0.55, -0.83);
 uniform float gloss_strength : hint_range(0.0, 1.0) = 0.18;

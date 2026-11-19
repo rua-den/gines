@@ -374,12 +374,34 @@ func _make_label(text: String, font_size: int, color: Color) -> Label:
 	return label
 
 
+func _make_hud_panel(rect: Rect2, accent: Color) -> Panel:
+	var panel := Panel.new()
+	panel.position = rect.position
+	panel.size = rect.size
+	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.025, 0.075, 0.09, 0.86)
+	style.border_color = Color(0.34, 0.72, 0.68, 0.42)
+	style.set_border_width_all(1)
+	style.border_width_left = 3
+	style.border_color = accent
+	style.set_corner_radius_all(12)
+	panel.add_theme_stylebox_override("panel", style)
+	return panel
+
+
 func _build_hud() -> void:
 	var ui := CanvasLayer.new()
 	ui.name = "UI"
 	ui.layer = 10
 	add_child(ui)
-	var title := _make_label("GENESIS — Prototype: Absorption, Survival & Evolution", 22, Color(0.95, 0.97, 0.95))
+	# Quiet translucent frames give the prototype HUD a deliberate hierarchy
+	# without covering the play space or changing gameplay coordinates.
+	var viewport_size := get_viewport_rect().size
+	ui.add_child(_make_hud_panel(Rect2(12, 8, 950, 180), CORAL))
+	ui.add_child(_make_hud_panel(
+		Rect2(12, viewport_size.y - 56, viewport_size.x - 24, 44), TEAL_LIGHT))
+	var title := _make_label("GENESIS  /  THE FIRST CELL", 22, Color(0.98, 0.96, 0.93))
 	title.offset_top = 12
 	title.offset_bottom = 44
 	ui.add_child(title)

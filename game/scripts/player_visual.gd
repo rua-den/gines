@@ -30,10 +30,10 @@ func _ready() -> void:
 
 	body = Sprite2D.new()
 	body.texture = _radial_texture(256, [
-		[0.0, Color(0.48, 0.80, 0.72, 1.0)],
-		[0.45, Color(0.25, 0.68, 0.60, 1.0)],
-		[0.80, Color(0.14, 0.47, 0.42, 1.0)],
-		[1.0, Color(0.08, 0.31, 0.28, 1.0)],
+		[0.0, Color(1.00, 0.79, 0.73, 1.0)],
+		[0.45, Color(1.00, 0.45, 0.42, 1.0)],
+		[0.80, Color(0.78, 0.20, 0.34, 1.0)],
+		[1.0, Color(0.38, 0.09, 0.25, 1.0)],
 	], Vector2(0.5, 0.42), Vector2(0.5, 0.98))
 	var rim_mat := ShaderMaterial.new()
 	rim_mat.shader = preload("res://shaders/body_rim.gdshader")
