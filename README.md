@@ -7,12 +7,13 @@ A solo + AI 2D action Metroidvania about the journey of a new life, from a singl
 ## Project status
 
 **Stage:** Pre-production  
-**Current milestone:** Phase 0 — Foundation & Pre-production (Milestone 0 merged 2026-11-15; Milestone 1 player movement merged 2026-11-17)
+**Current milestone:** Phase 0 — Foundation & Pre-production (Milestone 0 merged 2026-11-15; Milestone 1 player movement merged 2026-11-17, close-out in progress — see the [Milestone Log](docs/MILESTONES.md))
 **Initial target:** A 4–6 hour PC game, with scope validated through a vertical slice.
 
 ## Documentation
 
 - [Development Plan](docs/DEVELOPMENT_PLAN.md) — roadmap, milestones, gates and risks.
+- [Milestone Log](docs/MILESTONES.md) — decisions (PASS / REVISE / BLOCKED), evidence and open items per milestone.
 - [Game Design Foundation](docs/GAME_DESIGN_FOUNDATION.md) — vision, pillars, core loop and design direction.
 - [Creative Exploration Plan](docs/CREATIVE_EXPLORATION_PLAN.md) — Muse AI creative track, review criteria and first art milestone.
 - [Muse Workspace](creative/muse/README.md) — instructions for Muse, briefs, output folders and concept naming.

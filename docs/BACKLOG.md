@@ -2,7 +2,8 @@
 
 **Current phase:** Phase 0 — Foundation & Pre-production  
 **Next implementation target:** Core Prototype  
-**Planning note:** These are ordered work items, not calendar deadlines.
+**Planning note:** These are ordered work items, not calendar deadlines.  
+**Milestone decisions:** recorded in [`MILESTONES.md`](MILESTONES.md) — a checked box is not a milestone PASS.
 
 ## Milestone 0 — Project setup
 

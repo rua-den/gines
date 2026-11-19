@@ -3,14 +3,14 @@
 Milestone 0 setup + Milestone 1 player movement. Godot **4.7.2**
 (stable). The project opens and launches into the Milestone 0 test
 scene; the movement test scene (`res://scenes/movement_test.tscn`)
-is where the player can actually move.
+is where the player can actually move. Milestone decisions and
+evidence are recorded in [`../docs/MILESTONES.md`](../docs/MILESTONES.md).
 
 ## Required version
 
 - **Godot 4.7.2 stable** (`4.7.2.stable.official.ed1daf0bf`).
-- Download the Linux x86_64 binary from
-  <https://godotengine.org/download/> (or the GitHub release
-  `godotengine/godot` tag `4.7.2-stable`).
+- Download from <https://godotengine.org/download/> or the GitHub release
+  `godotengine/godot` tag `4.7.2-stable` (Linux x86_64 or Windows x86_64).
 - Do **not** use Godot 4.8 beta or any other version without a recorded
   owner decision. Godot 4.4 remains installed on this machine for the
   creative experiments in `creative/muse/experiments/godot-style-test/`
@@ -58,10 +58,50 @@ xvfb-run -a -s "-screen 0 960x540x24" godot --audio-driver Dummy --path game \
 ```
 
 ```sh
-# Regression check: grip detach direction (prints ALL PASS, exits 0)
+# Regression checks (print results, exit 0 = pass, 1 = failure)
 godot --headless --audio-driver Dummy --path game \
   --script res://tests/grip_detach_check.gd
+godot --headless --audio-driver Dummy --path game \
+  --script res://tests/demo_verdict_check.gd
 ```
+
+### Windows (PowerShell)
+
+Use the `_console.exe` build so `print()` output reaches the terminal. Run from
+the repository root:
+
+```powershell
+$godot = "C:\path\to\Godot_v4.7.2-stable_win64_console.exe"
+
+& $godot --headless --path game --import
+& $godot --headless --audio-driver Dummy --path game res://scenes/test_scene.tscn --quit-after 5
+& $godot --headless --audio-driver Dummy --path game res://scenes/movement_test.tscn --quit-after 5
+& $godot --headless --audio-driver Dummy --path game --script res://tests/grip_detach_check.gd
+& $godot --headless --audio-driver Dummy --path game --script res://tests/demo_verdict_check.gd
+
+# Demo autopilot (needs a real window: headless runs cannot capture screenshots).
+# The outdir must be absolute: Godot resolves relative paths against game/.
+& $godot --audio-driver Dummy --path game res://scenes/movement_test.tscn `
+  -- --m1-demo --outdir="$PWD/creative/muse/outputs/experiments"
+```
+
+`tools/verify.ps1` runs all of the above and exits non-zero if any check fails.
+Demo screenshots go to a temp folder so verification does not dirty the tracked
+evidence; pass `-OutDir` to regenerate it deliberately:
+
+```powershell
+pwsh -File tools/verify.ps1 -Godot "C:\path\to\Godot_v4.7.2-stable_win64_console.exe"
+pwsh -File tools/verify.ps1 -Godot "..." -OutDir "creative/muse/outputs/experiments"
+```
+
+### What the demo exit code means
+
+The demo is evidence only if it can fail. `scripts/movement_test.gd` collects
+the run's observations, evaluates them in `evaluate_demo()` and exits **1** when
+any criterion fails (missing screenshot, leaving the room, missing state, camera
+not following). The last line of a run is `[M1] DEMO RESULT: PASS` or `FAIL`.
+`tests/demo_verdict_check.gd` covers that verdict headlessly; a headless demo
+run reports `FAIL` by design because it cannot save screenshots.
 
 The main scene is `res://scenes/test_scene.tscn`. It shows a scaling
 marker layout and a live input readout. Pressing `Esc`/`P` toggles a
@@ -135,10 +175,12 @@ on the build machine); they need a human pass.
   experiments — chosen for broad PC compatibility.
 - Verification: the test scene anchors gold corner markers, edge ticks
   and a border frame to the viewport edges. Screenshots at 960×540,
-  1280×720 and 1920×1080 (see `creative/muse/outputs/experiments/
-  M0_test-scene_*_v01.png`) show the layout scaling correctly at each
-  size; the on-screen readout prints both the logical viewport
-  (always 960×540) and the real window size.
+  1280×720 and 1920×1080 are committed as
+  `creative/muse/outputs/experiments/M0_test-scene_{960x540,1280x720,1920x1080}_v01.png`;
+  the layout scales correctly at each size, and the on-screen readout prints both
+  the logical viewport (always 960×540) and the real window size. The 1920×1080
+  request produced a 1920×1061 client area on the capture machine, which is why
+  that readout differs.
 
 ## Notes
 
