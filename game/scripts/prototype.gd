@@ -386,7 +386,6 @@ func _make_hud_panel(rect: Rect2, accent: Color) -> Panel:
 	style.border_width_left = 3
 	style.border_color = accent
 	style.set_corner_radius_all(12)
-	style.set_content_margin_all(12)
 	panel.add_theme_stylebox_override("panel", style)
 	return panel
 
