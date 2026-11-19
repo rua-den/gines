@@ -1,7 +1,8 @@
 # GENESIS — Godot project
 
 Milestone 0 setup + Milestone 1 player movement + Milestone 2 absorption and
-survival + Milestone 3 first evolution. Godot **4.7.2** (stable). The project
+survival + Milestone 3 first evolution + Milestone 4 energy for the burst.
+Godot **4.7.2** (stable). The project
 opens and launches into the Milestone 0 test scene; play the prototype at
 `res://scenes/prototype.tscn`. Milestone decisions and evidence are recorded in
 [`../docs/MILESTONES.md`](../docs/MILESTONES.md).
@@ -93,6 +94,8 @@ godot --headless --audio-driver Dummy --path game \
 godot --headless --audio-driver Dummy --path game \
   --script res://tests/evolution_check.gd
 godot --headless --audio-driver Dummy --path game \
+  --script res://tests/energy_check.gd
+godot --headless --audio-driver Dummy --path game \
   --script res://tests/m3_verdict_check.gd
 ```
 
@@ -114,6 +117,7 @@ $godot = "C:\path\to\Godot_v4.7.2-stable_win64_console.exe"
 & $godot --headless --audio-driver Dummy --path game --script res://tests/survival_check.gd
 & $godot --headless --audio-driver Dummy --path game --script res://tests/m2_verdict_check.gd
 & $godot --headless --audio-driver Dummy --path game --script res://tests/evolution_check.gd
+& $godot --headless --audio-driver Dummy --path game --script res://tests/energy_check.gd
 & $godot --headless --audio-driver Dummy --path game --script res://tests/m3_verdict_check.gd
 
 # Demo autopilot (needs a real window: headless runs cannot capture screenshots).
@@ -181,6 +185,24 @@ Same room geometry as the movement test, plus the first loop that can be lost.
 - Feedback is visual and HUD only — there are no audio assets in the project
   yet, so no sound is implied anywhere.
 
+### Milestone 4 — energy for the spike burst
+
+The evolved burst is now limited by a small energy pool instead of only its
+cooldown. Starting values are **Proposed** (not owner-approved) and meant to be
+tuned in playtest:
+
+- Maximum **3** energy, cost **1** per burst, passive regeneration **1/s**.
+- The HUD shows `Energy ●●○ 2.0/3` only after evolution; the pips dim when a
+  burst is unaffordable.
+- A burst that is unavailable (not evolved, cooling down, or out of energy) is
+  rejected without spending energy or damaging anything.
+- Energy starts full on a fresh run and after retry/revive. It is **not**
+  saved: the existing evolved/nutrition save behavior is unchanged.
+- Energy never gates movement, absorption, evolution or required progress.
+
+Design record: `../docs/superpowers/specs/2026-11-19-m4-energy-design.md`.
+Regression check: `tests/energy_check.gd` (7 cases).
+
 The main scene is `res://scenes/test_scene.tscn`. It shows a scaling
 marker layout and a live input readout. Pressing `Esc`/`P` toggles a
 PAUSED label. In screenshot mode it feeds two real key events (D, E)
@@ -242,6 +264,7 @@ Empty folders carry a `.gitkeep` so the layout survives a fresh clone.
 | `move_down` | S / Down | Left stick down, D-pad down |
 | `interact` | E / Space | South button (A / Cross) |
 | `grip` | Shift | West button (X / Square) |
+| `attack` | J | North button (Y / Triangle) |
 | `pause` | Esc / P | Start |
 
 Game code must use `Input.is_action_pressed("...")` /

@@ -1,5 +1,6 @@
 extends Node2D
-## Milestone 2 — absorption & survival prototype.
+## Milestone 2 — absorption & survival prototype, extended by M3 evolution and
+## the M4 energy loop.
 ##
 ## The Milestone 1 movement room (same 1920x1080 geometry) plus the first loop
 ## that can be lost:
@@ -54,6 +55,7 @@ var health_label: Label
 var nutrition_label: Label
 var state_label: Label
 var evolution_label: Label
+var energy_label: Label
 var retry_label: Label
 var demo_label: Label
 var pause_label: Label
@@ -394,9 +396,16 @@ func _build_hud() -> void:
 	evolution_label.offset_top = 104
 	evolution_label.offset_bottom = 128
 	ui.add_child(evolution_label)
+	# Energy is only meaningful once the body can burst, so it stays hidden
+	# before evolution rather than implying a resource the player cannot use.
+	energy_label = _make_label("", 16, TEAL_LIGHT)
+	energy_label.offset_top = 130
+	energy_label.offset_bottom = 154
+	energy_label.visible = false
+	ui.add_child(energy_label)
 	demo_label = _make_label("", 16, GOLD)
-	demo_label.offset_top = 130
-	demo_label.offset_bottom = 154
+	demo_label.offset_top = 156
+	demo_label.offset_bottom = 180
 	demo_label.visible = demo
 	ui.add_child(demo_label)
 	var hint := _make_label(
@@ -432,9 +441,15 @@ func _update_hud() -> void:
 	nutrition_label.text = "Nutrition %.0f" % player.nutrition
 	# A brief bright pulse is the absorption/hit feedback: no audio yet.
 	nutrition_label.modulate = Color(1.6, 1.5, 1.1) if _flash > 0.0 else Color.WHITE
+	energy_label.visible = player.evolved
 	if player.evolved:
 		evolution_label.text = "EVOLVED — ciliated spikes: J to burst"
 		evolution_label.modulate = Color(1.0, 0.88, 0.62)
+		var energy_pips := ""
+		for i in int(player.MAX_ENERGY):
+			energy_pips += "●" if i < int(player.energy) else "○"
+		energy_label.text = "Energy %s  %.1f/%.0f" % [energy_pips, player.energy, player.MAX_ENERGY]
+		energy_label.modulate = Color(1.0, 0.75, 0.65) if player.energy < player.BURST_ENERGY_COST else Color.WHITE
 	elif zone.in_range(player.global_position):
 		evolution_label.text = "EVOLUTION — press E  (%d/%d nutrition)" % [int(player.nutrition), int(player.EVOLVE_COST)]
 		evolution_label.modulate = Color(1.4, 1.2, 0.75) if player.can_evolve() else Color(0.78, 0.72, 0.6)

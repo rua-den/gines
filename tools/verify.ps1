@@ -78,6 +78,7 @@ try {
     Invoke-Check "regression: survival contract" @("--headless", "--audio-driver", "Dummy", "--path", "game", "--script", "res://tests/survival_check.gd") 'ALL PASS' | Out-Null
     Invoke-Check "regression: M2 demo verdict can fail" @("--headless", "--audio-driver", "Dummy", "--path", "game", "--script", "res://tests/m2_verdict_check.gd") 'ALL PASS' | Out-Null
     Invoke-Check "regression: evolution contract" @("--headless", "--audio-driver", "Dummy", "--path", "game", "--script", "res://tests/evolution_check.gd") 'ALL PASS' | Out-Null
+    Invoke-Check "regression: energy contract" @("--headless", "--audio-driver", "Dummy", "--path", "game", "--script", "res://tests/energy_check.gd") 'ALL PASS' | Out-Null
     Invoke-Check "regression: M3 demo verdict can fail" @("--headless", "--audio-driver", "Dummy", "--path", "game", "--script", "res://tests/m3_verdict_check.gd") 'ALL PASS' | Out-Null
 
     if ($SkipDemo) {

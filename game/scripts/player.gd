@@ -44,6 +44,12 @@ const BURST_RANGE := 130.0
 const BURST_COOLDOWN := 0.8
 const BURST_DAMAGE := 1
 
+# Milestone 4 — a small energy pool limits repeated bursts. All values are
+# Proposed for playtest; energy is intentionally not part of the save file.
+const MAX_ENERGY := 3.0
+const BURST_ENERGY_COST := 1.0
+const ENERGY_REGEN_RATE := 1.0
+
 signal nutrition_gained(amount: float)
 signal damaged(hits_left: int)
 signal died
@@ -62,6 +68,9 @@ var absorb_target: Absorbable = null
 
 # Milestone 3 state.
 var evolved := false
+
+# Milestone 4 state: starts full, refilled by revive, never saved.
+var energy := MAX_ENERGY
 
 # Demo autopilot injection (movement_test.gd sets these).
 var demo_active := false
@@ -195,6 +204,7 @@ func take_damage(amount: int, from_pos: Vector2) -> bool:
 ## Full health plus a grace window; the scene owns the respawn position.
 func revive() -> void:
 	health = MAX_HEALTH
+	energy = MAX_ENERGY
 	dead = false
 	_invuln = INVULN_TIME
 	velocity = Vector2.ZERO
@@ -235,7 +245,7 @@ func _apply_evolved(value: bool) -> void:
 
 
 func can_attack() -> bool:
-	return evolved and _burst_cooldown <= 0.0
+	return evolved and _burst_cooldown <= 0.0 and energy >= BURST_ENERGY_COST
 
 
 ## First offensive body part. Returns false when the body has not evolved yet or
@@ -243,6 +253,7 @@ func can_attack() -> bool:
 func spike_burst() -> bool:
 	if not can_attack():
 		return false
+	energy = maxf(energy - BURST_ENERGY_COST, 0.0)
 	_burst_cooldown = BURST_COOLDOWN
 	burst_fired.emit(global_position)
 	# Predators are looked up by group rather than by type: predator.gd already
@@ -292,6 +303,7 @@ func _physics_process(delta: float) -> void:
 		_invuln -= delta
 	if _burst_cooldown > 0.0:
 		_burst_cooldown -= delta
+	energy = minf(energy + ENERGY_REGEN_RATE * delta, MAX_ENERGY)
 	if dead:
 		# No input while defeated: drift to a stop so the retry overlay reads.
 		velocity *= exp(-SWIM_DAMP * delta)

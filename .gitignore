@@ -1,5 +1,8 @@
-# Godot 4 — editor-generated cache, safe to delete (regenerated on import)
+# Godot 4 - editor-generated cache, safe to delete (regenerated on import)
 .godot/
 
 # Godot editor logs / temp files
 *.log
+
+# Superpowers execution scratch (ledger, briefs, review packages)
+.superpowers/

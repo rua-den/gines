@@ -1,7 +1,7 @@
 # GENESIS — Initial Backlog
 
-**Current phase:** Phase 2 — Evolution & combat prototype (first evolution accepted; remaining scope to be defined)
-**Next implementation target:** Define remaining Phase 2 scope
+**Current phase:** Phase 2 — Evolution & combat prototype (M4 energy loop automated; owner feel check open)
+**Next implementation target:** Owner playtest of the M4 energy loop, then define remaining Phase 2 scope
 **Planning note:** These are ordered work items, not calendar deadlines.  
 **Milestone decisions:** recorded in [`MILESTONES.md`](MILESTONES.md) — a checked box is not a milestone PASS.
 
@@ -85,6 +85,32 @@ check is still open in `MILESTONES.md`.*
   - Evidence: `SaveState` → `user://genesis_save.cfg`; a second scene run loads
     the evolved body (asserted end-to-end); `--fresh-save` clears it.
 
+## Milestone 4 — Energy for the burst
+
+*Automated acceptance met 2026-11-19; the human "does energy add a useful
+decision?" check is open in `MILESTONES.md`. All values are **Proposed**.*
+
+- [x] Add a small energy pool to the evolved burst.
+  - Acceptance: HUD energy is visible after evolution and changes on use and recharge.
+  - Evidence: `MAX_ENERGY` 3, `BURST_ENERGY_COST` 1, `ENERGY_REGEN_RATE` 1/s;
+    HUD `Energy ●●○ 2.2/3` in the M3 burst capture.
+- [x] Reject invalid bursts without side effects.
+  - Acceptance: pre-evolution, cooldown-blocked and energy-starved bursts spend
+    no energy and deal no damage.
+  - Evidence: `tests/energy_check.gd` 7/7 — fresh full, exact spend, pre-evolution
+    refusal, cooldown refusal, starved refusal, capped regeneration, revive refill.
+- [x] Regenerate energy without exceeding the maximum.
+  - Acceptance: energy recovers with elapsed time and never passes its cap.
+  - Evidence: regeneration case asserts ~1 energy per second and a hard cap.
+- [x] Keep energy out of the save file.
+  - Acceptance: reloading preserves evolved/nutrition behavior and does not
+    restore spent energy.
+  - Evidence: `save_state.gd` unchanged; the existing M3 scene save flow and
+    `tests/evolution_check.gd` still pass.
+- [ ] Owner playtest: does managing energy add a useful decision?
+  - Acceptance: the owner can complete a short evolved encounter without
+    instructions and judge the cost/recovery loop.
+
 ## Prototype acceptance gate
 
 The prototype passes when a player can:
@@ -96,6 +122,7 @@ The prototype passes when a player can:
 5. Meet an evolution requirement.
 6. Trigger one evolution.
 7. Use the newly acquired ability.
+8. Manage the ability's energy cost and recovery (M4).
 
 The loop must be understandable and enjoyable enough to justify building a vertical slice.
 

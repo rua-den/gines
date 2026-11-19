@@ -16,6 +16,7 @@ criteria were observed, not assumed.
 | 1 | Player movement | PASS (2026-11-19) | PASS (owner playtest, 2026-11-19) | **PASS** |
 | 2 | Absorption & survival | PASS (2026-11-19) | PASS (owner playtest, 2026-11-19) | **PASS** |
 | 3 | First evolution | PASS (2026-11-19) | PASS (owner playtest, 2026-11-19) | **PASS** |
+| 4 | Energy for the burst | PASS (2026-11-19) | **Open** — owner feel check | **Automated PASS / human Open** |
 
 ## How the evidence was produced
 
@@ -35,6 +36,7 @@ $godot = "C:\path\to\Godot_v4.7.2-stable_win64_console.exe"
 & $godot --headless --audio-driver Dummy --path game --script res://tests/survival_check.gd
 & $godot --headless --audio-driver Dummy --path game --script res://tests/m2_verdict_check.gd
 & $godot --headless --audio-driver Dummy --path game --script res://tests/evolution_check.gd
+& $godot --headless --audio-driver Dummy --path game --script res://tests/energy_check.gd
 & $godot --headless --audio-driver Dummy --path game --script res://tests/m3_verdict_check.gd
 & $godot --audio-driver Dummy --path game res://scenes/movement_test.tscn -- --m1-demo --outdir="$(Get-Location)/creative/muse/outputs/experiments"
 & $godot --audio-driver Dummy --path game res://scenes/prototype.tscn -- --m2-demo --outdir="$(Get-Location)/creative/muse/outputs/experiments"
@@ -251,4 +253,58 @@ Screenshots are committed under `creative/muse/outputs/experiments/`:
   6. Is the predator a threat you can beat rather than a wall you must kite?
   7. Relaunch after evolving: does a persisted body feel right, or does it need
      a visible "progress saved" cue?
+
+## Milestone 4 — Energy for the burst
+
+- **Objective:** make the evolved burst a repeated decision by giving it a small
+  spend-and-recover pool, without touching movement, absorption or progression.
+- **Automated decision:** **PASS** (2026-11-19).
+- **Human decision:** **Open** — see the playtest checklist below.
+- **Design record:** [`superpowers/specs/2026-11-19-m4-energy-design.md`](superpowers/specs/2026-11-19-m4-energy-design.md)
+  — energy on the existing burst rather than a boss or a second ability, so the
+  spend/recover question is isolated.
+- **Implementation plan:** [`superpowers/plans/2026-11-19-m4-energy.md`](superpowers/plans/2026-11-19-m4-energy.md).
+- **Decision status:** every value below is **Proposed** by the agent; tuning a
+  capacity, cost or regeneration rate is not a design reversal.
+- **Acceptance evidence:**
+  - *Energy pool and HUD*: `PlayerController` exposes `MAX_ENERGY` 3,
+    `BURST_ENERGY_COST` 1, `ENERGY_REGEN_RATE` 1/s and mutable `energy`. The
+    prototype HUD shows `Energy ●●○ 2.2/3` only after evolution — visible in the
+    re-generated `M3_prototype-burst_v01.png` capture; the line is hidden in the
+    pre-evolution `M3_prototype-requirement_v01.png`.
+  - *Exact spend*: one accepted burst subtracts exactly one energy and one
+    predator health; `tests/energy_check.gd` 7/7 covers the full contract.
+  - *No side effects on refusal*: pre-evolution, cooldown-blocked and
+    energy-starved bursts return false, spend no energy and deal no damage.
+  - *Regeneration and cap*: energy recovers with elapsed physics time and never
+    exceeds `MAX_ENERGY`; the check measures ~1 energy per second and the cap.
+  - *Retry/revive*: `revive()` refills energy to maximum; health behavior is
+    unchanged.
+  - *Save behavior*: `save_state.gd` was not modified. Energy is not persisted;
+    the existing M3 evolved/nutrition scene save flow still passes end-to-end.
+  - *Harness can fail*: before implementation the check failed with access
+    errors for the missing `energy`/`MAX_ENERGY` members and exited 1; after
+    implementation it reports `ALL PASS`, and `tools/verify.ps1` includes it.
+    The full runner passed 15/15 checks on 2026-11-19.
+- **Known limitations (not failures):**
+  - Regeneration is continuous, with no delay after an attack. The spec lists
+    the delayed alternative as open.
+  - The HUD shows a fractional value while regenerating; pips use the whole
+    number so the numeric part carries the partial state.
+  - No energy pickups, no second ability, no boss, and still no audio assets.
+- **Risks:**
+  - *The values may make the burst too available or too scarce.* 3 capacity with
+    1/s regeneration lets the M3 demo still defeat the predator, so required
+    progress is intact; whether it is a *good* limit is exactly what the owner
+    playtest decides.
+  - *A visible energy bar can imply a resource economy the game does not have.*
+    It is deliberately hidden before evolution and only limits an optional
+    ability.
+- **Open items — owner playtest checklist:**
+  1. Is the `Energy` line legible after evolution without reading the README?
+  2. Does spending 1 of 3 feel like a cost, or does regeneration erase it?
+  3. Does waiting for energy read as a decision, or as downtime?
+  4. Does the pip/number readout communicate affordability before pressing `J`?
+  5. Should regeneration start immediately (proposed) or after a short delay?
+  6. Does the limit change how you fight the predator in a way you enjoy?
 
