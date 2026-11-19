@@ -1,6 +1,6 @@
 # GENESIS — Game Design Foundation v0.1
 
-**Status:** Pre-production foundation  
+**Status:** Pre-production foundation (reconciled with Development Plan v0.2, 2026-11-19)  
 **Decision labels:** Confirmed / Proposed / Open / Risk
 
 ## 1. High concept
@@ -176,7 +176,7 @@ No post-birth life simulation is currently planned.
 - Solo + AI; no fixed deadline.
 - Initial target: 4–6 hours.
 - Expansion to 8–12 hours only if the core loop and production capacity justify it.
-- Godot is preferred for the first prototype; Unity remains an alternative until validated.
+- Godot 4.7.2 is the confirmed engine for the prototype and the game; Unity is no longer a fallback (updated 2026-11-15, Milestone 0 — see `DEVELOPMENT_PLAN.md`).
 - Frame-by-frame animation is the current direction, but production cost must be tested.
 - Build a vertical slice before full production.
 - AI may assist with concepts, code, audio exploration, testing and production assets, with consistent human review.

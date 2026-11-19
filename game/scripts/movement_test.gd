@@ -16,6 +16,8 @@ const ROOM := Rect2(0, 0, 1920, 1080)
 const FLOOR_TOP := 1020.0
 const START_POS := Vector2(300, 500)
 const PLAYER_SCENE := preload("res://scenes/player.tscn")
+const DEMO_SHOTS := 4
+const DEMO_MIN_CAMERA_DX := 600.0
 
 const BG := Color(0.05, 0.16, 0.18)
 const SLAB := Color(0.10, 0.32, 0.30)
@@ -394,7 +396,13 @@ func _schedule_capture(name: String) -> void:
 
 func _save_capture(name: String) -> void:
 	var path := outdir + "/M1_movement-" + name + "_v01.png"
-	var img: Image = get_viewport().get_texture().get_image()
+	var tex := get_viewport().get_texture()
+	var img: Image = tex.get_image() if tex != null else null
+	if img == null:
+		# Headless runs have no viewport image; fail loudly but keep the
+		# verdict accurate (the missing capture is counted as a failure).
+		push_error("[M1] SCREENSHOT failed: no viewport image (headless run?)")
+		return
 	var err: Error = img.save_png(path)
 	if err == OK:
 		print("[M1] SCREENSHOT saved: ", path)
@@ -411,12 +419,27 @@ func _finish_demo() -> void:
 	print("[M1] position range x [", _min_pos.x, ", ", _max_pos.x, "] y [", _min_pos.y, ", ", _max_pos.y, "]")
 	print("[M1] camera moved x: ", _cam_start_x, " -> ", camera.global_position.x)
 	print("[M1] final state: ", player.state_name(), " at ", player.global_position)
-	var ok_states := player.state_history().has("SWIM->CRAWL") and player.state_history().has("SWIM->GRIP")
-	var ok_bounds := _min_pos.x >= 60.0 and _max_pos.x <= 1860.0 and _min_pos.y >= 60.0 and _max_pos.y <= 1020.0
-	var ok_camera := camera.global_position.x - _cam_start_x > 600.0
-	var ok_shots := _captured.size() == 4
-	print("[M1] ASSERT states(swim/crawl/grip seen): ", ok_states)
-	print("[M1] ASSERT stayed in bounds: ", ok_bounds)
-	print("[M1] ASSERT camera followed (>600px): ", ok_camera)
-	print("[M1] ASSERT 4 screenshots: ", ok_shots)
-	get_tree().quit()
+	var camera_dx := camera.global_position.x - _cam_start_x
+	var failures := evaluate_demo(player.state_history(), _min_pos, _max_pos, camera_dx, _captured.size())
+	for failure in failures:
+		print("[M1] FAILED: ", failure)
+	print("[M1] DEMO RESULT: ", "PASS" if failures.is_empty() else "FAIL")
+	# A demo run is evidence only if a failed criterion fails the process.
+	get_tree().quit(0 if failures.is_empty() else 1)
+
+
+## Turns the run's raw observations into the list of failed acceptance
+## criteria; empty means PASS. Kept separate from the run itself so the
+## verdict can be regression-tested headlessly (tests/demo_verdict_check.gd)
+## — a verdict that cannot report a failure would let a broken demo exit 0.
+func evaluate_demo(history: Array[String], min_pos: Vector2, max_pos: Vector2, camera_dx: float, shots: int) -> Array[String]:
+	var failures: Array[String] = []
+	if not (history.has("SWIM->CRAWL") and history.has("SWIM->GRIP")):
+		failures.append("states: expected SWIM->CRAWL and SWIM->GRIP in %s" % [history])
+	if not (min_pos.x >= 60.0 and max_pos.x <= 1860.0 and min_pos.y >= 60.0 and max_pos.y <= 1020.0):
+		failures.append("bounds: left the room (x %s..%s, y %s..%s)" % [min_pos.x, max_pos.x, min_pos.y, max_pos.y])
+	if not (camera_dx > DEMO_MIN_CAMERA_DX):
+		failures.append("camera: followed only %d px (need > %d)" % [int(camera_dx), int(DEMO_MIN_CAMERA_DX)])
+	if shots != DEMO_SHOTS:
+		failures.append("captures: %d of %d screenshots saved" % [shots, DEMO_SHOTS])
+	return failures
