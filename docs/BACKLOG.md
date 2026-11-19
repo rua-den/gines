@@ -97,16 +97,19 @@ decision?" check is open in `MILESTONES.md`. All values are **Proposed**.*
 - [x] Reject invalid bursts without side effects.
   - Acceptance: pre-evolution, cooldown-blocked and energy-starved bursts spend
     no energy and deal no damage.
-  - Evidence: `tests/energy_check.gd` 7/7 — fresh full, exact spend, pre-evolution
-    refusal, cooldown refusal, starved refusal, capped regeneration, revive refill.
+  - Evidence: `tests/energy_check.gd` 9/9 — fresh full, exact spend, pre-evolution
+    refusal, cooldown refusal (no second hit), starved refusal (0.5 stays 0.5),
+    capped regeneration, pause does not regenerate, revive refill, and the save
+    omits energy.
 - [x] Regenerate energy without exceeding the maximum.
   - Acceptance: energy recovers with elapsed time and never passes its cap.
   - Evidence: regeneration case asserts ~1 energy per second and a hard cap.
 - [x] Keep energy out of the save file.
   - Acceptance: reloading preserves evolved/nutrition behavior and does not
     restore spent energy.
-  - Evidence: `save_state.gd` unchanged; the existing M3 scene save flow and
-    `tests/evolution_check.gd` still pass.
+  - Evidence: `save_state.gd` unchanged; `tests/energy_check.gd` saves an
+    evolved, spent player and asserts the file has only `evolved`/`nutrition`;
+    the existing M3 scene save flow and `tests/evolution_check.gd` still pass.
 - [ ] Owner playtest: does managing energy add a useful decision?
   - Acceptance: the owner can complete a short evolved encounter without
     instructions and judge the cost/recovery loop.

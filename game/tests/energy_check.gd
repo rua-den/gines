@@ -7,6 +7,7 @@ extends SceneTree
 ##   * A burst is rejected — with no energy spent and no damage dealt — before
 ##     evolution, while the cooldown holds, or when energy is below the cost.
 ##   * Energy regenerates with elapsed time and never exceeds MAX_ENERGY.
+##   * Pausing the game does not regenerate energy.
 ##   * Revive refills energy; energy is not written to the save file.
 ##
 ## Run:
@@ -14,7 +15,7 @@ extends SceneTree
 ##     --script res://tests/energy_check.gd
 ## Exit code 0 = all cases pass, 1 = at least one failure.
 
-const EXPECTED_CASES := 7
+const EXPECTED_CASES := 9
 
 var _passed := 0
 var _failed := 0
@@ -99,6 +100,7 @@ func _case_no_burst_before_evolution() -> void:
 
 func _case_cooldown_rejection_costs_nothing() -> void:
 	var p := _make_player()
+	var pred := _make_predator(Vector2(560, 500), p) # inside BURST_RANGE
 	p.nutrition = p.EVOLVE_COST
 	p.evolve()
 	var first := p.spike_burst()
@@ -108,10 +110,12 @@ func _case_cooldown_rejection_costs_nothing() -> void:
 	await _frames(2)
 	var ok: bool = first and not second \
 		and is_equal_approx(after_first, p.MAX_ENERGY - p.BURST_ENERGY_COST) \
-		and is_equal_approx(after_second, after_first)
+		and is_equal_approx(after_second, after_first) \
+		and pred.health == Predator.MAX_HEALTH - 1
 	_check("a cooldown-blocked burst spends no energy", ok,
-		"first=%s second=%s after_first=%.2f after_second=%.2f" % [
-			first, second, after_first, after_second])
+		"first=%s second=%s after_first=%.2f after_second=%.2f predator_health=%d" % [
+			first, second, after_first, after_second, pred.health])
+	pred.queue_free()
 	p.queue_free()
 	await _frames(2)
 
@@ -121,9 +125,11 @@ func _case_starved_rejection() -> void:
 	var pred := _make_predator(Vector2(560, 500), p)
 	p.nutrition = p.EVOLVE_COST
 	p.evolve()
-	p.energy = 0.0
+	# Below the cost but above zero, so a spend that ignores affordability
+	# would be visible instead of clamping to zero.
+	p.energy = 0.5
 	var fired := p.spike_burst()
-	var ok: bool = not fired and is_zero_approx(p.energy) \
+	var ok: bool = not fired and is_equal_approx(p.energy, 0.5) \
 		and pred.health == Predator.MAX_HEALTH
 	_check("an energy-starved burst is rejected", ok,
 		"fired=%s energy=%.2f predator_health=%d" % [
@@ -149,6 +155,53 @@ func _case_regeneration_capped() -> void:
 	await _frames(2)
 
 
+func _case_pause_does_not_regenerate() -> void:
+	var path := "user://test_energy_pause.cfg"
+	SaveState.clear(path)
+	var scene: Node = load("res://scenes/prototype.tscn").instantiate()
+	scene.set("_save_path", path)
+	get_root().add_child(scene)
+	await _frames(3)
+	var p: PlayerController = scene.player
+	p.energy = 0.0
+	paused = true
+	await _frames(30)
+	var during: float = p.energy
+	paused = false
+	await _frames(2)
+	var ok: bool = is_zero_approx(during)
+	_check("pause does not regenerate energy", ok,
+		"energy_after_pause=%.2f" % during)
+	SaveState.clear(path)
+	scene.queue_free()
+	await _frames(2)
+
+
+func _case_save_omits_energy() -> void:
+	var path := "user://test_energy_save.cfg"
+	SaveState.clear(path)
+	var scene: Node = load("res://scenes/prototype.tscn").instantiate()
+	scene.set("_save_path", path)
+	get_root().add_child(scene)
+	await _frames(3)
+	var p: PlayerController = scene.player
+	p.nutrition = p.EVOLVE_COST
+	p.evolve()
+	p.energy = 0.0
+	scene._save_progress()
+	var data := SaveState.read(path)
+	var fresh := _make_player()
+	await _frames(2)
+	var ok: bool = data.get("evolved", false) and not data.has("energy") \
+		and is_equal_approx(fresh.energy, fresh.MAX_ENERGY)
+	_check("energy is not written to the save", ok,
+		"keys=%s fresh_energy=%.2f" % [data.keys(), fresh.energy])
+	fresh.queue_free()
+	scene.queue_free()
+	SaveState.clear(path)
+	await _frames(3)
+
+
 func _case_revive_refills() -> void:
 	var p := _make_player()
 	p.energy = 0.0
@@ -171,6 +224,8 @@ func _init() -> void:
 	await _case_cooldown_rejection_costs_nothing()
 	await _case_starved_rejection()
 	await _case_regeneration_capped()
+	await _case_pause_does_not_regenerate()
+	await _case_save_omits_energy()
 	await _case_revive_refills()
 	if _passed + _failed != EXPECTED_CASES:
 		_failed += 1

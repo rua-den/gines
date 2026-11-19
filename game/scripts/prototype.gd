@@ -304,6 +304,10 @@ func _build_room() -> void:
 
 func _build_player() -> void:
 	player = PLAYER_SCENE.instantiate()
+	# The scene root is PROCESS_MODE_ALWAYS so the pause key still works; the
+	# player must not inherit that, or movement and energy regeneration keep
+	# running behind the PAUSED overlay.
+	player.process_mode = Node.PROCESS_MODE_PAUSABLE
 	player.position = START_POS
 	add_child(player)
 	player.nutrition_gained.connect(_on_nutrition)
@@ -338,6 +342,7 @@ func _build_motes() -> void:
 
 func _build_predator() -> void:
 	predator = Predator.new()
+	predator.process_mode = Node.PROCESS_MODE_PAUSABLE
 	predator.position = PREDATOR_START
 	predator.patrol_min_x = 1000.0
 	predator.patrol_max_x = 1520.0

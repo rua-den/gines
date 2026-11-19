@@ -198,10 +198,12 @@ tuned in playtest:
   rejected without spending energy or damaging anything.
 - Energy starts full on a fresh run and after retry/revive. It is **not**
   saved: the existing evolved/nutrition save behavior is unchanged.
+- Pausing halts energy regeneration (player and predator are pausable even
+  though the scene root stays always-on for the pause key).
 - Energy never gates movement, absorption, evolution or required progress.
 
 Design record: `../docs/superpowers/specs/2026-11-19-m4-energy-design.md`.
-Regression check: `tests/energy_check.gd` (7 cases).
+Regression check: `tests/energy_check.gd` (9 cases).
 
 The main scene is `res://scenes/test_scene.tscn`. It shows a scaling
 marker layout and a live input readout. Pressing `Esc`/`P` toggles a

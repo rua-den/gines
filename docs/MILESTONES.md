@@ -273,15 +273,24 @@ Screenshots are committed under `creative/muse/outputs/experiments/`:
     re-generated `M3_prototype-burst_v01.png` capture; the line is hidden in the
     pre-evolution `M3_prototype-requirement_v01.png`.
   - *Exact spend*: one accepted burst subtracts exactly one energy and one
-    predator health; `tests/energy_check.gd` 7/7 covers the full contract.
+    predator health; `tests/energy_check.gd` 9/9 covers the full contract.
   - *No side effects on refusal*: pre-evolution, cooldown-blocked and
-    energy-starved bursts return false, spend no energy and deal no damage.
+    energy-starved bursts return false, spend no energy and deal no damage. The
+    starved case starts at 0.5 (not 0) so a spend that ignored affordability
+    would be visible; the cooldown case carries a predator and asserts it takes
+    exactly one hit.
+  - *Pause*: the scene root stays `PROCESS_MODE_ALWAYS` for the pause key, but
+    the player and predator are `PROCESS_MODE_PAUSABLE`, so pausing does not
+    regenerate energy or move the fight. A headless case asserts energy is
+    unchanged after 30 paused physics frames.
   - *Regeneration and cap*: energy recovers with elapsed physics time and never
     exceeds `MAX_ENERGY`; the check measures ~1 energy per second and the cap.
   - *Retry/revive*: `revive()` refills energy to maximum; health behavior is
     unchanged.
-  - *Save behavior*: `save_state.gd` was not modified. Energy is not persisted;
-    the existing M3 evolved/nutrition scene save flow still passes end-to-end.
+  - *Save behavior*: `save_state.gd` was not modified. The check saves an
+    evolved player with spent energy and asserts the file contains only
+    `evolved`/`nutrition`, while a fresh player starts full; the existing M3
+    scene save flow still passes end-to-end.
   - *Harness can fail*: before implementation the check failed with access
     errors for the missing `energy`/`MAX_ENERGY` members and exited 1; after
     implementation it reports `ALL PASS`, and `tools/verify.ps1` includes it.
@@ -292,6 +301,9 @@ Screenshots are committed under `creative/muse/outputs/experiments/`:
   - The HUD shows a fractional value while regenerating; pips use the whole
     number so the numeric part carries the partial state.
   - No energy pickups, no second ability, no boss, and still no audio assets.
+  - A rejected burst is silent (no signal, no cue) apart from the dimmed HUD
+    line. Adding refusal feedback is deferred to the owner playtest, because
+    the milestone exists to judge whether the cost reads at all.
 - **Risks:**
   - *The values may make the burst too available or too scarce.* 3 capacity with
     1/s regeneration lets the M3 demo still defeat the predator, so required
