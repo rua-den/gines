@@ -13,9 +13,9 @@ criteria were observed, not assumed.
 | Milestone | Scope | Automated evidence | Human check | Decision |
 |---|---|---|---|---|
 | 0 | Godot project setup | PASS (2026-11-19) | PASS (owner, 2026-11-15) | **PASS** |
-| 1 | Player movement | PASS (2026-11-19) | **Open** — owner playtest | **REVISE-pending** |
-| 2 | Absorption & survival | PASS (2026-11-19) | **Open** — owner playtest | **Automated PASS / human Open** |
-| 3 | First evolution | PASS (2026-11-19) | **Open** — owner playtest | **Automated PASS / human Open** |
+| 1 | Player movement | PASS (2026-11-19) | PASS (owner playtest, 2026-11-19) | **PASS** |
+| 2 | Absorption & survival | PASS (2026-11-19) | PASS (owner playtest, 2026-11-19) | **PASS** |
+| 3 | First evolution | PASS (2026-11-19) | PASS (owner playtest, 2026-11-19) | **PASS** |
 
 ## How the evidence was produced
 
@@ -86,7 +86,7 @@ Screenshots are committed under `creative/muse/outputs/experiments/`:
 - **Objective:** one controllable biological form that swims, crawls and grips
   a surface inside a bounded test room, with a following camera.
 - **Automated decision:** **PASS** (2026-11-19).
-- **Human decision:** **Open** — see the playtest checklist below.
+- **Human decision:** **PASS** (owner playtest, 2026-11-19).
 - **Acceptance evidence:**
   - *Player can move in a bounded environment*: demo autopilot drove the player
     from x=300 to x=1744 inside the 1920×1080 room; bounds assertion passed.
@@ -109,7 +109,8 @@ Screenshots are committed under `creative/muse/outputs/experiments/`:
   design), floor crawl entry is automatic when moving along the floor while
   pressing sideways, and all geometry is generated in code rather than authored
   scenes.
-- **Open items — owner playtest checklist:**
+- **Owner playtest result:** **PASS** (2026-11-19); no revisions requested.
+  The checklist below records what was reviewed:
   1. Swim: acceleration, top speed and stopping distance feel controllable.
   2. Floor transition: moving right along the floor with `S` held should crawl,
      not feel sticky or unexpectedly slow.
@@ -120,17 +121,14 @@ Screenshots are committed under `creative/muse/outputs/experiments/`:
   6. Camera does not jitter or lag distractingly, and room limits do not reveal
      out-of-bounds space.
   7. Gamepad pass if a controller is available.
-- **Decision rule:** tick PASS if the checklist holds without changes; record
-  **REVISE** with the specific item that failed otherwise.
 
 ## Milestone 2 — Absorption & survival
 
 - **Objective:** the first loop that can be lost — food that takes time to take,
   and an organism that punishes taking it at the wrong moment.
 - **Automated decision:** **PASS** (2026-11-19).
-- **Human decision:** **Open** — see the playtest checklist below. "Absorption
-  is understandable and satisfying" and "enemy interaction works" are
-  `DEVELOPMENT_PLAN.md` Phase 1 exit criteria only a player can judge.
+- **Human decision:** **PASS** (owner playtest, 2026-11-19). The owner found the
+  absorption and enemy interaction understandable and acceptable.
 - **Design record:** [`superpowers/specs/2026-11-19-m2-absorption-design.md`](superpowers/specs/2026-11-19-m2-absorption-design.md)
   — the three absorption verbs considered (contact snatch, grip-feed,
   channel-hold) and why channel-hold was chosen.
@@ -168,7 +166,8 @@ Screenshots are committed under `creative/muse/outputs/experiments/`:
     death (foundation §9 mentions dropped resources — deliberately deferred).
   - `prototype.gd` duplicates the room-drawing helpers from `movement_test.gd`;
     with two scenes a shared module is not yet worth the churn.
-- **Open items — owner playtest checklist:**
+- **Owner playtest result:** **PASS** (2026-11-19); no revisions requested.
+  The checklist below records what was reviewed:
   1. Is it clear that a mote must be channelled (`E` held) rather than touched?
   2. Does the 0.75 s channel feel like commitment, or like waiting?
   3. Does the feeding drag (260 → 90 px/s) read as a cost, or as a bug?
@@ -177,16 +176,14 @@ Screenshots are committed under `creative/muse/outputs/experiments/`:
      prompt noticed?
   6. Does the loop read without instructions: see mote → feed → see predator →
      avoid or get hit → retry?
-- **Decision rule:** tick PASS if the checklist holds; record **REVISE** with
-  the specific item that failed otherwise.
 
 ## Milestone 3 — First evolution
 
 - **Objective:** turn the absorbed resource into a permanent, visible body change
   with one usable ability, and keep it across a restart.
 - **Automated decision:** **PASS** (2026-11-19).
-- **Human decision:** **Open** — see the playtest checklist below. Whether the
-  first evolution *feels* like a payoff is a player judgement.
+- **Human decision:** **PASS** (owner playtest, 2026-11-19); the first evolution
+  and its ability were acceptable to the owner.
 - **Design record:** [`superpowers/specs/2026-11-19-m3-evolution-design.md`](superpowers/specs/2026-11-19-m3-evolution-design.md)
   — why 30 nutrition once, why a radial burst, and why the transformation itself
   creates space.
@@ -243,7 +240,8 @@ Screenshots are committed under `creative/muse/outputs/experiments/`:
     fixes (orbit instead of charging, capture timing, the shockwave) before it
     survived three hearts. That is evidence the fight is tight, not that it is
     enjoyable.
-- **Open items — owner playtest checklist:**
+- **Owner playtest result:** **PASS** (2026-11-19); no revisions requested.
+  The checklist below records what was reviewed:
   1. Before arriving, is the 30-nutrition requirement legible from the HUD?
   2. Does the golden alcove read as interactive without being told?
   3. Does the spike ring read as a permanent change rather than a buff icon?
@@ -253,6 +251,4 @@ Screenshots are committed under `creative/muse/outputs/experiments/`:
   6. Is the predator a threat you can beat rather than a wall you must kite?
   7. Relaunch after evolving: does a persisted body feel right, or does it need
      a visible "progress saved" cue?
-- **Decision rule:** tick PASS if the checklist holds; record **REVISE** with
-  the specific item that failed otherwise.
 

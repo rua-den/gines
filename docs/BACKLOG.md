@@ -1,7 +1,7 @@
 # GENESIS — Initial Backlog
 
-**Current phase:** Phase 0 — Foundation & Pre-production  
-**Next implementation target:** Core Prototype  
+**Current phase:** Phase 2 — Evolution & combat prototype (first evolution accepted; remaining scope to be defined)
+**Next implementation target:** Define remaining Phase 2 scope
 **Planning note:** These are ordered work items, not calendar deadlines.  
 **Milestone decisions:** recorded in [`MILESTONES.md`](MILESTONES.md) — a checked box is not a milestone PASS.
 
