@@ -1,8 +1,8 @@
 # GENESIS — Godot project
 
 Milestone 0 setup + Milestone 1 player movement + Milestone 2 absorption and
-survival. Godot **4.7.2** (stable). The project opens and launches into the
-Milestone 0 test scene; play the prototype at
+survival + Milestone 3 first evolution. Godot **4.7.2** (stable). The project
+opens and launches into the Milestone 0 test scene; play the prototype at
 `res://scenes/prototype.tscn`. Milestone decisions and evidence are recorded in
 [`../docs/MILESTONES.md`](../docs/MILESTONES.md).
 
@@ -49,6 +49,11 @@ godot --path game res://scenes/movement_test.tscn
 # avoid the predator, retry with E after defeat
 godot --path game res://scenes/prototype.tscn
 
+# Same scene, Milestone 3: feed to 30 nutrition, press E at the golden alcove
+# to evolve, then J to burst. Progress saves to user://genesis_save.cfg;
+# start from a clean slate with --fresh-save
+godot --path game res://scenes/prototype.tscn -- --fresh-save
+
 # Headless smoke check: loads the test scene, prints [M0] READY, exits 0
 godot --headless --audio-driver Dummy --path game res://scenes/test_scene.tscn --quit-after 5
 
@@ -66,6 +71,11 @@ xvfb-run -a -s "-screen 0 960x540x24" godot --audio-driver Dummy --path game \
 # M2 demo autopilot: feed -> get hit -> get defeated -> retry, 3 screenshots
 xvfb-run -a -s "-screen 0 960x540x24" godot --audio-driver Dummy --path game \
   res://scenes/prototype.tscn -- --m2-demo --outdir=/tmp/m2
+
+# M3 demo autopilot: feed -> evolve at the alcove -> kill the predator,
+# 4 named screenshots (requirement, evolve, burst, kill)
+xvfb-run -a -s "-screen 0 960x540x24" godot --audio-driver Dummy --path game \
+  res://scenes/prototype.tscn -- --m3-demo --outdir=/tmp/m3
 ```
 
 ```sh
@@ -80,6 +90,10 @@ godot --headless --audio-driver Dummy --path game \
   --script res://tests/survival_check.gd
 godot --headless --audio-driver Dummy --path game \
   --script res://tests/m2_verdict_check.gd
+godot --headless --audio-driver Dummy --path game \
+  --script res://tests/evolution_check.gd
+godot --headless --audio-driver Dummy --path game \
+  --script res://tests/m3_verdict_check.gd
 ```
 
 ### Windows (PowerShell)
@@ -99,6 +113,8 @@ $godot = "C:\path\to\Godot_v4.7.2-stable_win64_console.exe"
 & $godot --headless --audio-driver Dummy --path game --script res://tests/absorption_check.gd
 & $godot --headless --audio-driver Dummy --path game --script res://tests/survival_check.gd
 & $godot --headless --audio-driver Dummy --path game --script res://tests/m2_verdict_check.gd
+& $godot --headless --audio-driver Dummy --path game --script res://tests/evolution_check.gd
+& $godot --headless --audio-driver Dummy --path game --script res://tests/m3_verdict_check.gd
 
 # Demo autopilot (needs a real window: headless runs cannot capture screenshots).
 # The outdir must be absolute: Godot resolves relative paths against game/.
@@ -106,6 +122,8 @@ $godot = "C:\path\to\Godot_v4.7.2-stable_win64_console.exe"
   -- --m1-demo --outdir="$PWD/creative/muse/outputs/experiments"
 & $godot --audio-driver Dummy --path game res://scenes/prototype.tscn `
   -- --m2-demo --outdir="$PWD/creative/muse/outputs/experiments"
+& $godot --audio-driver Dummy --path game res://scenes/prototype.tscn `
+  -- --m3-demo --outdir="$PWD/creative/muse/outputs/experiments"
 ```
 
 `tools/verify.ps1` runs all of the above and exits non-zero if any check fails.
@@ -130,6 +148,24 @@ run reports `FAIL` by design because it cannot save screenshots.
 it fails when nothing was absorbed, the predator never landed a hit, no retry
 happened, a screenshot is missing, or the player left the room.
 `tests/m2_verdict_check.gd` covers that verdict in 7 cases.
+
+The M3 autopilot (`--m3-demo`, `[M3] DEMO RESULT`) fails when the body never
+evolved, the burst never defeated the predator, the nutrition left is below the
+kill reward (the cost was not paid), any of the four **named** captures is
+missing, or the player left the room. Captures are checked by name, so a
+duplicated screenshot cannot stand in for a missing one.
+`tests/m3_verdict_check.gd` covers that verdict in 8 cases.
+
+Command-line arguments for the prototype:
+
+| Argument | Effect |
+|---|---|
+| `--m2-demo` / `--m3-demo` | Run the autopilot and exit 0/1 with its verdict. Never reads or writes the player's save. |
+| `--outdir=<absolute path>` | Where demo screenshots are written (relative paths resolve against `game/`). |
+| `--fresh-save` | Delete `user://genesis_save.cfg` before loading, for a clean first run. |
+
+Engine arguments such as `--quit-after N` must come **before** the `--`
+separator; anything after it is passed to the game as a user argument.
 
 ### Milestone 2 prototype (`res://scenes/prototype.tscn`)
 

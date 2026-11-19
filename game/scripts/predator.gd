@@ -18,18 +18,28 @@ const DETECT_RANGE := 420.0
 const TOUCH_RANGE := 66.0
 const DAMAGE := 1
 const RADIUS := 26.0
+const GROUP := "predator"
+const MAX_HEALTH := 2
+# How long a shoved organism is reeling: no chase, no bite.
+const STAGGER_TIME := 0.8
+
+signal killed
 
 var player: PlayerController = null
 var patrol_min_x := 0.0
 var patrol_max_x := 0.0
 var facing := 1.0
 var chasing := false
+var health := MAX_HEALTH
+var defeated := false
+var stagger := 0.0
 
 var _t := 0.0
 var _body: Sprite2D
 
 
 func _ready() -> void:
+	add_to_group(GROUP)
 	collision_layer = 8
 	collision_mask = 2 # the room's static slabs
 	if get_node_or_null("Shape") == null:
@@ -62,8 +72,20 @@ func _build_visual() -> void:
 
 func _physics_process(delta: float) -> void:
 	_t += delta
+	if defeated:
+		# Fade out after being killed; no further movement or damage.
+		if _body != null:
+			_body.modulate.a = maxf(_body.modulate.a - delta * 2.5, 0.0)
+		velocity = Vector2.ZERO
+		return
 	if player == null:
 		velocity = Vector2.ZERO
+		return
+
+	if stagger > 0.0:
+		stagger -= delta
+		velocity = Vector2.ZERO
+		_pulse(0.5)
 		return
 
 	var to_player := player.global_position - global_position
@@ -89,7 +111,43 @@ func _physics_process(delta: float) -> void:
 		player.take_damage(DAMAGE, global_position)
 
 	# Visual: pulse faster while hunting so the state is legible at a glance.
-	if _body != null:
-		var rate := 1.4 if chasing else 0.6
-		var pulse := 0.94 + 0.06 * sin(_t * rate * TAU)
-		_body.scale = Vector2.ONE * (RADIUS / 32.0) * pulse
+	_pulse(1.4 if chasing else 0.6)
+
+
+func _pulse(rate: float) -> void:
+	if _body == null:
+		return
+	var pulse := 0.94 + 0.06 * sin(_t * rate * TAU)
+	_body.scale = Vector2.ONE * (RADIUS / 32.0) * pulse
+
+
+## Pushes the organism out to `distance` from a point, never closer. Used by the
+## evolution shockwave so the body has room at the moment it changes.
+## Returns how far it actually moved (0 when already clear).
+func shove_away_from(from: Vector2, distance: float) -> float:
+	if defeated:
+		return 0.0
+	var away := global_position - from
+	if away.length() >= distance:
+		return 0.0
+	if away.length() < 0.001:
+		away = Vector2.RIGHT
+	var target := from + away.normalized() * distance
+	var moved := target - global_position
+	global_position = target
+	velocity = Vector2.ZERO
+	stagger = STAGGER_TIME
+	return moved.length()
+
+
+## Returns true when the hit landed. The killed signal fires exactly once.
+func take_damage(amount: int) -> bool:
+	if defeated:
+		return false
+	health = maxi(health - amount, 0)
+	if health == 0:
+		defeated = true
+		chasing = false
+		velocity = Vector2.ZERO
+		killed.emit()
+	return true

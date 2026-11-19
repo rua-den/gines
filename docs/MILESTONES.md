@@ -15,6 +15,7 @@ criteria were observed, not assumed.
 | 0 | Godot project setup | PASS (2026-11-19) | PASS (owner, 2026-11-15) | **PASS** |
 | 1 | Player movement | PASS (2026-11-19) | **Open** — owner playtest | **REVISE-pending** |
 | 2 | Absorption & survival | PASS (2026-11-19) | **Open** — owner playtest | **Automated PASS / human Open** |
+| 3 | First evolution | PASS (2026-11-19) | **Open** — owner playtest | **Automated PASS / human Open** |
 
 ## How the evidence was produced
 
@@ -33,8 +34,11 @@ $godot = "C:\path\to\Godot_v4.7.2-stable_win64_console.exe"
 & $godot --headless --audio-driver Dummy --path game --script res://tests/absorption_check.gd
 & $godot --headless --audio-driver Dummy --path game --script res://tests/survival_check.gd
 & $godot --headless --audio-driver Dummy --path game --script res://tests/m2_verdict_check.gd
+& $godot --headless --audio-driver Dummy --path game --script res://tests/evolution_check.gd
+& $godot --headless --audio-driver Dummy --path game --script res://tests/m3_verdict_check.gd
 & $godot --audio-driver Dummy --path game res://scenes/movement_test.tscn -- --m1-demo --outdir="$(Get-Location)/creative/muse/outputs/experiments"
 & $godot --audio-driver Dummy --path game res://scenes/prototype.tscn -- --m2-demo --outdir="$(Get-Location)/creative/muse/outputs/experiments"
+& $godot --audio-driver Dummy --path game res://scenes/prototype.tscn -- --m3-demo --outdir="$(Get-Location)/creative/muse/outputs/experiments"
 ```
 
 The demo outdir must be absolute: Godot resolves relative paths against `game/`,
@@ -58,6 +62,10 @@ Screenshots are committed under `creative/muse/outputs/experiments/`:
 | `M2_prototype-absorb_v01.png` | A mote consumed; nutrition 10, health full |
 | `M2_prototype-hit_v01.png` | Predator contact: health 2, player flickering invulnerable |
 | `M2_prototype-retry_v01.png` | Defeat overlay: all health lost, "press E to retry" |
+| `M3_prototype-requirement_v01.png` | At the golden alcove: "EVOLUTION — press E (30/30 nutrition)" |
+| `M3_prototype-evolve_v01.png` | After evolving: spike ring around the body, "EVOLVED — J to burst" |
+| `M3_prototype-burst_v01.png` | The burst ring expanding, predator inside it, three hearts |
+| `M3_prototype-kill_v01.png` | Predator defeated and fading, nutrition 15 |
 
 ## Milestone 0 — Project setup
 
@@ -169,6 +177,82 @@ Screenshots are committed under `creative/muse/outputs/experiments/`:
      prompt noticed?
   6. Does the loop read without instructions: see mote → feed → see predator →
      avoid or get hit → retry?
+- **Decision rule:** tick PASS if the checklist holds; record **REVISE** with
+  the specific item that failed otherwise.
+
+## Milestone 3 — First evolution
+
+- **Objective:** turn the absorbed resource into a permanent, visible body change
+  with one usable ability, and keep it across a restart.
+- **Automated decision:** **PASS** (2026-11-19).
+- **Human decision:** **Open** — see the playtest checklist below. Whether the
+  first evolution *feels* like a payoff is a player judgement.
+- **Design record:** [`superpowers/specs/2026-11-19-m3-evolution-design.md`](superpowers/specs/2026-11-19-m3-evolution-design.md)
+  — why 30 nutrition once, why a radial burst, and why the transformation itself
+  creates space.
+- **Decision status:** every number below is **Proposed** by the agent under the
+  owner's standing "keep going and invent what is missing" instruction. None of
+  it is owner-approved; adjusting a cost or a cooldown is not a design reversal.
+- **Acceptance evidence:**
+  - *One evolution requirement*: 30 nutrition, spent once, checked by
+    `player.can_evolve()`; a refused attempt flashes the HUD and prints the
+    shortfall. Covered by `tests/evolution_check.gd` (case 1–2).
+  - *One evolution zone*: a golden alcove at (1720, 420), radius 120 px, past
+    the predator's patrol band. `interact` inside it evolves; the HUD shows
+    `EVOLUTION — press E (30/30 nutrition)` and dims when the cost is not met.
+    The site dims permanently once used.
+  - *One body transformation*: fourteen golden spikes around the body, breathing
+    slowly; the body also brightens. Visible in `M3_prototype-evolve_v01.png`.
+  - *New body part → one ability*: `spike_burst` (radius 130 px, 1 damage,
+    0.8 s cooldown, `attack` = J / gamepad button 3). Unavailable before
+    evolution, usable after; out-of-range predators are spared; the cooldown
+    holds; two bursts kill. All six behaviours are asserted headlessly.
+  - *Evolution feedback*: the alcove ring, a HUD state change, an expanding
+    burst ring per shot (`scripts/burst_ring.gd`), a 1.5 s grace window and a
+    120 px shockwave that leaves nearby organisms reeling for 0.8 s. Still no
+    audio — stated, not implied.
+  - *Save and reload*: `SaveState` writes `evolved` and `nutrition` to
+    `user://genesis_save.cfg`; a second scene run loads the evolved body and
+    marks the alcove used (asserted end-to-end, not just as a dictionary
+    round-trip). Demo runs never read or write the player's save;
+    `--fresh-save` clears it.
+  - *Harness can fail*: `--m3-demo` requires four **named** captures
+    (`requirement`, `evolve`, `burst`, `kill`), the evolution, the kill, a
+    nutrition floor and room bounds, and exits 1 otherwise.
+    `tests/m3_verdict_check.gd` covers that verdict in 8 cases, including a
+    duplicated screenshot that must not substitute for a missing one.
+    Observed in practice: the first M3 demo run **failed** (the hunt stage
+    timed out because the autopilot charged the predator head-on), which is the
+    defect the exit code exists to surface.
+- **Known limitations (not failures):**
+  - One evolution, no branch, no second site. The body changes exactly once.
+  - The save holds progress only: position, eaten motes and the predator's death
+    are not persisted; relaunching restarts the room with an evolved body.
+  - The predator has no physical presence: with damage radius-based (66 px), it
+    can sit inside the player's 55 px body without pushing it. Visible in some
+    frames; harmless mechanically, questionable as feel.
+  - `prototype.gd` still duplicates the M1 room-drawing helpers and now also
+    carries both demo autopilots; the file is the largest in the project and is
+    the first candidate for extraction once a third scene needs the same room.
+- **Risks:**
+  - *The predator camps the alcove.* Detection (420 px) reaches the site, so the
+    first evolution happens with a predator arriving. The grace window plus
+    shockwave (agent-proposed) paper over it; the owner may prefer moving the
+    site or the patrol band instead.
+  - *The demo proves possibility, not fun.* The autopilot needed several real
+    fixes (orbit instead of charging, capture timing, the shockwave) before it
+    survived three hearts. That is evidence the fight is tight, not that it is
+    enjoyable.
+- **Open items — owner playtest checklist:**
+  1. Before arriving, is the 30-nutrition requirement legible from the HUD?
+  2. Does the golden alcove read as interactive without being told?
+  3. Does the spike ring read as a permanent change rather than a buff icon?
+  4. Does `J` read as coming from the spikes (ring timing and reach)?
+  5. Does the transformation grace + shockwave feel like a payoff, or like the
+     game taking the body away for a moment?
+  6. Is the predator a threat you can beat rather than a wall you must kite?
+  7. Relaunch after evolving: does a persisted body feel right, or does it need
+     a visible "progress saved" cue?
 - **Decision rule:** tick PASS if the checklist holds; record **REVISE** with
   the specific item that failed otherwise.
 

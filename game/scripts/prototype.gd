@@ -24,7 +24,16 @@ const MOTE_START := [
 	Vector2(1240, 300),
 ]
 const PREDATOR_START := Vector2(1180, 560)
+const ZONE_POS := Vector2(1720, 420)
+const KILL_REWARD := 15.0
 const DEMO_SHOTS := 3
+# Named, not counted: a duplicated screenshot cannot stand in for a missing one.
+const M3_SHOTS := ["requirement", "evolve", "burst", "kill"]
+# Agent-proposed (not owner-approved): the transformation itself grants a short
+# grace window and pushes nearby cells out, so the first evolution moment is a
+# beat rather than an immediate brawl.
+const EVOLVE_GRACE := 1.5
+const EVOLVE_SHOCK_RADIUS := 120.0
 const DEMO_BOUNDS := Rect2(60, 60, 1800, 960)
 const DEMO_TIMEOUT := 20.0
 
@@ -38,11 +47,13 @@ const CORAL := Color(0.95, 0.48, 0.42)
 var player: PlayerController
 var predator: Predator
 var camera: Camera2D
+var zone: EvolutionZone
 var motes: Array[Absorbable] = []
 
 var health_label: Label
 var nutrition_label: Label
 var state_label: Label
+var evolution_label: Label
 var retry_label: Label
 var demo_label: Label
 var pause_label: Label
@@ -51,13 +62,17 @@ var pause_label: Label
 var absorbed := 0
 var hits := 0
 var retries := 0
+var predator_defeated := false
 
 var _paused := false
 var _flash := 0.0
 var _anim := 0.0
+var _save_path := SaveState.DEFAULT_PATH
+var _fresh_save := false
 
 # Demo mode.
 var demo := false
+var m3_demo := false
 var outdir := ""
 var _stage := 0
 var _stage_timer := 0.0
@@ -66,27 +81,37 @@ var _capture_timer := 0.0
 var _captured: Array[String] = []
 var _min_pos := Vector2.INF
 var _max_pos := Vector2(-INF, -INF)
+var _bursts := 0
 var _done := false
 
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	print("[M2] READY prototype, viewport ", get_viewport_rect().size)
+	for a in OS.get_cmdline_user_args():
+		if a == "--m2-demo":
+			demo = true
+		elif a == "--m3-demo":
+			demo = true
+			m3_demo = true
+		elif a == "--fresh-save":
+			_fresh_save = true
+		elif a.begins_with("--outdir="):
+			outdir = a.trim_prefix("--outdir=")
+	if _fresh_save:
+		SaveState.clear(_save_path)
 	_build_background()
 	_build_room()
+	_build_zone()
 	_build_player()
 	_build_motes()
 	_build_predator()
 	_build_camera()
 	_build_hud()
-	for a in OS.get_cmdline_user_args():
-		if a == "--m2-demo":
-			demo = true
-		elif a.begins_with("--outdir="):
-			outdir = a.trim_prefix("--outdir=")
+	_load_progress()
 	if demo:
 		player.demo_active = true
-		print("[M2] demo mode, outdir=", outdir)
+		print("[M2] demo mode, outdir=", outdir, " m3=", m3_demo)
 
 
 func _input(event: InputEvent) -> void:
@@ -106,11 +131,14 @@ func _process(delta: float) -> void:
 	camera.global_position = player.global_position
 	_update_hud()
 	if not player.dead and not demo and Input.is_action_just_pressed("interact"):
-		pass # interact belongs to absorption while alive
+		_try_evolve()
 	if player.dead and not demo and Input.is_action_just_pressed("interact"):
 		_retry()
 	if demo and not _done:
-		_demo_update(delta)
+		if m3_demo:
+			_m3_demo_update(delta)
+		else:
+			_demo_update(delta)
 	if _pending_capture != "":
 		_capture_timer -= delta
 		if _capture_timer <= 0.0:
@@ -142,6 +170,62 @@ func _retry() -> void:
 	retry_label.visible = false
 	camera.global_position = START_POS
 	print("[M2] retry #", retries)
+
+
+## Evolution site activation. Kept on the scene so the rule (player.can_evolve)
+## lives in exactly one place; returns false when nothing happened.
+func _try_evolve() -> bool:
+	if player.evolved or not zone.in_range(player.global_position):
+		return false
+	if not player.can_evolve():
+		_flash = 0.35
+		print("[M3] evolution refused: %d/%d nutrition" % [int(player.nutrition), int(player.EVOLVE_COST)])
+		return false
+	player.evolve()
+	zone.mark_used()
+	player.grant_grace(EVOLVE_GRACE)
+	# The transformation itself creates space: nearby organisms are pushed out.
+	for node in get_tree().get_nodes_in_group(Predator.GROUP):
+		if node.has_method("shove_away_from"):
+			node.shove_away_from(player.global_position, EVOLVE_SHOCK_RADIUS)
+	_flash = 0.5
+	_save_progress()
+	print("[M3] evolved; nutrition now ", player.nutrition)
+	return true
+
+
+func _on_killed() -> void:
+	predator_defeated = true
+	player.nutrition += KILL_REWARD
+	_flash = 0.35
+	_save_progress()
+	print("[M3] predator defeated, +", KILL_REWARD, " nutrition")
+	get_tree().create_timer(0.6).timeout.connect(_remove_predator)
+
+
+func _remove_predator() -> void:
+	if predator != null and is_instance_valid(predator):
+		predator.queue_free()
+	predator = null
+
+
+func _save_progress() -> void:
+	# Demo runs never touch the player's real save.
+	if demo:
+		return
+	SaveState.write(_save_path, {"evolved": player.evolved, "nutrition": player.nutrition})
+
+
+func _load_progress() -> void:
+	if demo:
+		return
+	var data := SaveState.read(_save_path)
+	if data.is_empty():
+		return
+	SaveState.apply_to_player(player, data)
+	if player.evolved:
+		zone.mark_used()
+		print("[M3] loaded saved progress: evolved=true nutrition=", player.nutrition)
 
 
 # ------------------------------------------------------------------ build
@@ -223,6 +307,22 @@ func _build_player() -> void:
 	player.nutrition_gained.connect(_on_nutrition)
 	player.damaged.connect(_on_damaged)
 	player.died.connect(_on_died)
+	player.burst_fired.connect(_on_burst_fired)
+
+
+## The burst's only feedback until there is audio: one expanding ring per shot.
+func _on_burst_fired(at: Vector2) -> void:
+	_bursts += 1
+	var ring := BurstRing.new()
+	ring.target_radius = PlayerController.BURST_RANGE
+	add_child(ring)
+	ring.global_position = at
+
+
+func _build_zone() -> void:
+	zone = EvolutionZone.new()
+	zone.position = ZONE_POS
+	add_child(zone)
 
 
 func _build_motes() -> void:
@@ -240,6 +340,7 @@ func _build_predator() -> void:
 	predator.patrol_min_x = 1000.0
 	predator.patrol_max_x = 1520.0
 	predator.player = player
+	predator.killed.connect(_on_killed)
 	add_child(predator)
 
 
@@ -271,7 +372,7 @@ func _build_hud() -> void:
 	ui.name = "UI"
 	ui.layer = 10
 	add_child(ui)
-	var title := _make_label("GENESIS — M2 Prototype: Absorption & Survival", 22, Color(0.95, 0.97, 0.95))
+	var title := _make_label("GENESIS — Prototype: Absorption, Survival & Evolution", 22, Color(0.95, 0.97, 0.95))
 	title.offset_top = 12
 	title.offset_bottom = 44
 	ui.add_child(title)
@@ -289,13 +390,17 @@ func _build_hud() -> void:
 	state_label.offset_top = 78
 	state_label.offset_bottom = 102
 	ui.add_child(state_label)
+	evolution_label = _make_label("", 16, GOLD)
+	evolution_label.offset_top = 104
+	evolution_label.offset_bottom = 128
+	ui.add_child(evolution_label)
 	demo_label = _make_label("", 16, GOLD)
-	demo_label.offset_top = 104
-	demo_label.offset_bottom = 128
+	demo_label.offset_top = 130
+	demo_label.offset_bottom = 154
 	demo_label.visible = demo
 	ui.add_child(demo_label)
 	var hint := _make_label(
-		"WASD — swim  •  hold E near a mote — absorb  •  Shift — grip  •  Esc — pause",
+		"WASD — swim  •  hold E near a mote — absorb  •  E at the golden alcove — evolve  •  J — burst  •  Shift — grip  •  Esc — pause",
 		15, Color(0.65, 0.8, 0.78))
 	hint.anchor_top = 1.0
 	hint.anchor_bottom = 1.0
@@ -327,6 +432,15 @@ func _update_hud() -> void:
 	nutrition_label.text = "Nutrition %.0f" % player.nutrition
 	# A brief bright pulse is the absorption/hit feedback: no audio yet.
 	nutrition_label.modulate = Color(1.6, 1.5, 1.1) if _flash > 0.0 else Color.WHITE
+	if player.evolved:
+		evolution_label.text = "EVOLVED — ciliated spikes: J to burst"
+		evolution_label.modulate = Color(1.0, 0.88, 0.62)
+	elif zone.in_range(player.global_position):
+		evolution_label.text = "EVOLUTION — press E  (%d/%d nutrition)" % [int(player.nutrition), int(player.EVOLVE_COST)]
+		evolution_label.modulate = Color(1.4, 1.2, 0.75) if player.can_evolve() else Color(0.78, 0.72, 0.6)
+	else:
+		evolution_label.text = "Evolution: golden alcove, far right  (%d/%d nutrition)" % [int(player.nutrition), int(player.EVOLVE_COST)]
+		evolution_label.modulate = Color(0.8, 0.75, 0.65)
 	var channel := ""
 	if player.absorb_target != null:
 		channel = "  •  absorbing %d%%" % int(100.0 * player.absorb_target.progress / player.ABSORB_CHANNEL)
@@ -434,16 +548,133 @@ func _finish_demo() -> void:
 	get_tree().quit(0 if failures.is_empty() else 1)
 
 
+## M3 demo: feed to the evolution cost, evolve at the alcove, kill the predator.
+func _m3_demo_update(delta: float) -> void:
+	_stage_timer += delta
+	demo_label.text = "DEMO stage %d  nutrition=%.0f evolved=%s killed=%s" % [
+		_stage, player.nutrition, player.evolved, predator_defeated]
+	if _stage_timer > DEMO_TIMEOUT:
+		print("[M3] demo stage ", _stage, " timed out")
+		_finish_m3_demo()
+		return
+	match _stage:
+		0:
+			var mote := _nearest_mote()
+			if player.nutrition >= player.EVOLVE_COST or mote == null:
+				player.demo_interact_held = false
+				player.demo_dir = Vector2.ZERO
+				_stage = 1
+				_stage_timer = 0.0
+				return
+			var to_mote := mote.global_position - player.global_position
+			player.demo_dir = to_mote.normalized() if to_mote.length() > 40.0 else Vector2.ZERO
+			player.demo_interact_held = to_mote.length() <= PlayerController.ABSORB_RANGE - 5.0
+		1:
+			var to_zone := zone.global_position - player.global_position
+			player.demo_dir = to_zone.normalized() if to_zone.length() > 20.0 else Vector2.ZERO
+			if zone.in_range(player.global_position):
+				player.demo_dir = Vector2.ZERO
+				if _pending_capture == "":
+					if not _captured.has("requirement") and _stage_timer > 0.4:
+						_capture("requirement")
+					elif _captured.has("requirement") and _stage_timer > 0.9 and _try_evolve():
+						_stage = 2
+						_stage_timer = 0.0
+		2:
+			player.demo_dir = Vector2.ZERO
+			if _pending_capture == "":
+				if not _captured.has("evolve") and _stage_timer > 0.35:
+					_capture("evolve")
+				elif _captured.has("evolve") and _stage_timer > 0.7:
+					_stage = 3
+					_stage_timer = 0.0
+		3:
+			if player.dead:
+				# Dying to the predator is legitimate gameplay; the demo recovers
+				# the way a player does instead of failing the run.
+				_retry()
+				_stage_timer = 0.0
+				return
+			# The burst effect lives for a third of a second, so grab it as soon
+			# as one fires rather than after the fight is over.
+			if _pending_capture == "" and _bursts > 0 and not _captured.has("burst"):
+				_capture("burst")
+				return
+			if predator_defeated or predator == null:
+				player.demo_dir = Vector2.ZERO
+				player.demo_attack_pressed = false
+				if _pending_capture == "":
+					if not _captured.has("kill"):
+						_capture("kill")
+					elif _stage_timer > 0.6:
+						_stage = 4
+						_stage_timer = 0.0
+				return
+			var to_pred := predator.global_position - player.global_position
+			var d := to_pred.length()
+			# Orbit the target rather than charging it: on a tangent the closing
+			# speed is zero, so the faster player keeps its distance while the
+			# ring still reaches. Biased toward the middle so the run cannot be
+			# pinned against a wall.
+			var tangent := Vector2(-to_pred.y, to_pred.x).normalized()
+			if tangent.dot(ROOM.get_center() - player.global_position) < 0.0:
+				tangent = -tangent
+			if player.can_attack() and d >= 85.0 and d <= PlayerController.BURST_RANGE - 10.0:
+				player.demo_attack_pressed = true
+			if d > PlayerController.BURST_RANGE - 20.0:
+				player.demo_dir = (to_pred.normalized() + tangent * 0.5).normalized()
+			elif d < 90.0:
+				player.demo_dir = (-to_pred.normalized() + tangent * 0.7).normalized()
+			else:
+				player.demo_dir = tangent
+		4:
+			if _pending_capture == "" and _stage_timer > 0.3:
+				_finish_m3_demo()
+
+
+func evaluate_m3_demo(did_evolve: bool, did_kill: bool, shots: Array, nutrition_left: float,
+		min_pos: Vector2, max_pos: Vector2) -> Array[String]:
+	var failures: Array[String] = []
+	if not did_evolve:
+		failures.append("evolution: the body never evolved")
+	if not did_kill:
+		failures.append("hunt: the burst never defeated the predator")
+	if nutrition_left < KILL_REWARD:
+		failures.append("economy: nutrition %.0f is below the kill reward %.0f (cost not paid?)" % [nutrition_left, KILL_REWARD])
+	for shot in M3_SHOTS:
+		if not shots.has(shot):
+			failures.append("captures: missing the \"%s\" screenshot (saved %s)" % [shot, shots])
+	if not (min_pos.x >= DEMO_BOUNDS.position.x and max_pos.x <= DEMO_BOUNDS.end.x
+			and min_pos.y >= DEMO_BOUNDS.position.y and max_pos.y <= DEMO_BOUNDS.end.y):
+		failures.append("bounds: left the room (x %s..%s, y %s..%s)" % [min_pos.x, max_pos.x, min_pos.y, max_pos.y])
+	return failures
+
+
+func _finish_m3_demo() -> void:
+	_done = true
+	print("[M3] DEMO DONE")
+	print("[M3] evolved=", player.evolved, " killed=", predator_defeated, " nutrition=", player.nutrition)
+	print("[M3] captures: ", _captured)
+	print("[M3] position range x [", _min_pos.x, ", ", _max_pos.x, "] y [", _min_pos.y, ", ", _max_pos.y, "]")
+	var failures := evaluate_m3_demo(player.evolved, predator_defeated, _captured,
+		player.nutrition, _min_pos, _max_pos)
+	for failure in failures:
+		print("[M3] FAILED: ", failure)
+	print("[M3] DEMO RESULT: ", "PASS" if failures.is_empty() else "FAIL")
+	get_tree().quit(0 if failures.is_empty() else 1)
+
+
 func _save_capture(name: String) -> void:
-	var path := outdir + "/M2_prototype-" + name + "_v01.png"
+	var prefix := "M3" if m3_demo else "M2"
+	var path := outdir + "/" + prefix + "_prototype-" + name + "_v01.png"
 	var tex := get_viewport().get_texture()
 	var img: Image = tex.get_image() if tex != null else null
 	if img == null:
-		push_error("[M2] SCREENSHOT failed: no viewport image (headless run?)")
+		push_error("[%s] SCREENSHOT failed: no viewport image (headless run?)" % prefix)
 		return
 	var err: Error = img.save_png(path)
 	if err != OK:
-		push_error("[M2] SCREENSHOT failed: %s (%d)" % [path, err])
+		push_error("[%s] SCREENSHOT failed: %s (%d)" % [prefix, path, err])
 	else:
 		_captured.append(name)
-		print("[M2] SCREENSHOT saved: ", path)
+		print("[%s] SCREENSHOT saved: %s" % [prefix, path])

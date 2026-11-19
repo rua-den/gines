@@ -62,18 +62,28 @@ check is still open in `MILESTONES.md`.*
 
 ## Milestone 3 — First evolution
 
-- [ ] Define one evolution requirement.
+- [x] Define one evolution requirement.
   - Acceptance: requirement can be inspected and tested.
-- [ ] Create one evolution zone.
+  - Evidence: 30 nutrition, once, via `player.can_evolve()`; `tests/evolution_check.gd`.
+- [x] Create one evolution zone.
   - Acceptance: player can activate it when requirements are met.
-- [ ] Implement one body transformation.
+  - Evidence: golden alcove at (1720, 420); `interact` in range; HUD prompt.
+- [x] Implement one body transformation.
   - Acceptance: character appearance changes visibly.
-- [ ] Connect the new body part to one ability.
+  - Evidence: fourteen-spike ring + brighter body (`player_visual.set_evolved`);
+    `creative/muse/outputs/experiments/M3_prototype-evolve_v01.png`.
+- [x] Connect the new body part to one ability.
   - Acceptance: ability is unavailable before evolution and usable afterward.
-- [ ] Add evolution feedback.
+  - Evidence: `spike_burst` (130 px, 1 damage, 0.8 s cooldown, `attack`);
+    unavailable-before and usable-after both asserted.
+- [x] Add evolution feedback.
   - Acceptance: transition communicates that a permanent change occurred.
-- [ ] Save and reload the evolution state.
+  - Evidence: alcove ring dims once used, HUD `EVOLVED`, burst ring per shot,
+    1.5 s grace + 120 px shockwave. Still no audio.
+- [x] Save and reload the evolution state.
   - Acceptance: evolution persists across a save/load cycle.
+  - Evidence: `SaveState` → `user://genesis_save.cfg`; a second scene run loads
+    the evolved body (asserted end-to-end); `--fresh-save` clears it.
 
 ## Prototype acceptance gate
 

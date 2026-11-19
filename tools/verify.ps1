@@ -77,6 +77,8 @@ try {
     Invoke-Check "regression: absorption contract" @("--headless", "--audio-driver", "Dummy", "--path", "game", "--script", "res://tests/absorption_check.gd") 'ALL PASS' | Out-Null
     Invoke-Check "regression: survival contract" @("--headless", "--audio-driver", "Dummy", "--path", "game", "--script", "res://tests/survival_check.gd") 'ALL PASS' | Out-Null
     Invoke-Check "regression: M2 demo verdict can fail" @("--headless", "--audio-driver", "Dummy", "--path", "game", "--script", "res://tests/m2_verdict_check.gd") 'ALL PASS' | Out-Null
+    Invoke-Check "regression: evolution contract" @("--headless", "--audio-driver", "Dummy", "--path", "game", "--script", "res://tests/evolution_check.gd") 'ALL PASS' | Out-Null
+    Invoke-Check "regression: M3 demo verdict can fail" @("--headless", "--audio-driver", "Dummy", "--path", "game", "--script", "res://tests/m3_verdict_check.gd") 'ALL PASS' | Out-Null
 
     if ($SkipDemo) {
         Write-Host "[SKIP] M1 demo autopilot (-SkipDemo)"
@@ -95,6 +97,7 @@ try {
         Write-Host "      demo screenshots: $outPath"
         Invoke-Check "M1 demo autopilot (swim/crawl/grip/camera)" @("--audio-driver", "Dummy", "--path", "game", "res://scenes/movement_test.tscn", "--", "--m1-demo", "--outdir=$outPath") 'DEMO RESULT: PASS' | Out-Null
         Invoke-Check "M2 demo autopilot (absorb/hit/retry)" @("--audio-driver", "Dummy", "--path", "game", "res://scenes/prototype.tscn", "--", "--m2-demo", "--outdir=$outPath") 'DEMO RESULT: PASS' | Out-Null
+        Invoke-Check "M3 demo autopilot (feed/evolve/kill)" @("--audio-driver", "Dummy", "--path", "game", "res://scenes/prototype.tscn", "--", "--m3-demo", "--outdir=$outPath") 'DEMO RESULT: PASS' | Out-Null
     }
 }
 finally {

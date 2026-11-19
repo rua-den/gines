@@ -38,9 +38,17 @@ const MAX_HEALTH := 3
 const INVULN_TIME := 1.0
 const KNOCKBACK := 260.0
 
+# Milestone 3 — first evolution and its offensive body part.
+const EVOLVE_COST := 30.0
+const BURST_RANGE := 130.0
+const BURST_COOLDOWN := 0.8
+const BURST_DAMAGE := 1
+
 signal nutrition_gained(amount: float)
 signal damaged(hits_left: int)
 signal died
+signal evolved_now
+signal burst_fired(at: Vector2)
 
 var state: State = State.SWIM
 var grip_normal := Vector2.UP
@@ -52,14 +60,19 @@ var health := MAX_HEALTH
 var dead := false
 var absorb_target: Absorbable = null
 
+# Milestone 3 state.
+var evolved := false
+
 # Demo autopilot injection (movement_test.gd sets these).
 var demo_active := false
 var demo_dir := Vector2.ZERO
 var demo_grip_pressed := false
 var demo_interact_held := false
+var demo_attack_pressed := false
 
 var _grip_cooldown := 0.0
 var _invuln := 0.0
+var _burst_cooldown := 0.0
 var _visual: Node2D
 var _state_changes: Array[String] = []
 
@@ -103,6 +116,15 @@ func _interact_held() -> bool:
 	if demo_active:
 		return demo_interact_held
 	return Input.is_action_pressed("interact")
+
+
+func _attack_just_pressed() -> bool:
+	if demo_active:
+		if demo_attack_pressed:
+			demo_attack_pressed = false
+			return true
+		return false
+	return Input.is_action_just_pressed("attack")
 
 
 ## Swim cap for this frame: feeding drags the body down to FEED_SPEED_CAP.
@@ -180,6 +202,59 @@ func revive() -> void:
 	state = State.SWIM
 
 
+# --------------------------------------------------------------- evolution
+
+func can_evolve() -> bool:
+	return not evolved and nutrition >= EVOLVE_COST
+
+
+## Spends EVOLVE_COST nutrition and permanently changes the body.
+func evolve() -> bool:
+	if not can_evolve():
+		return false
+	nutrition -= EVOLVE_COST
+	_apply_evolved(true)
+	evolved_now.emit()
+	return true
+
+
+## Restores evolved state from a save without charging for it again.
+func restore_evolved(value: bool) -> void:
+	_apply_evolved(value)
+
+
+## Extends the damage grace window, e.g. for the transformation moment.
+func grant_grace(seconds: float) -> void:
+	_invuln = maxf(_invuln, seconds)
+
+
+func _apply_evolved(value: bool) -> void:
+	evolved = value
+	if _visual != null and _visual.has_method("set_evolved"):
+		_visual.set_evolved(value)
+
+
+func can_attack() -> bool:
+	return evolved and _burst_cooldown <= 0.0
+
+
+## First offensive body part. Returns false when the body has not evolved yet or
+## the cooldown has not elapsed, so "unavailable before evolution" is observable.
+func spike_burst() -> bool:
+	if not can_attack():
+		return false
+	_burst_cooldown = BURST_COOLDOWN
+	burst_fired.emit(global_position)
+	# Predators are looked up by group rather than by type: predator.gd already
+	# depends on PlayerController, and a typed reference back would be cyclic.
+	for node in get_tree().get_nodes_in_group("predator"):
+		if not node.has_method("take_damage"):
+			continue
+		if global_position.distance_to(node.global_position) <= BURST_RANGE:
+			node.take_damage(BURST_DAMAGE)
+	return true
+
+
 func _set_state(next: State) -> void:
 	if next == state:
 		return
@@ -215,6 +290,8 @@ func _physics_process(delta: float) -> void:
 		_grip_cooldown -= delta
 	if _invuln > 0.0:
 		_invuln -= delta
+	if _burst_cooldown > 0.0:
+		_burst_cooldown -= delta
 	if dead:
 		# No input while defeated: drift to a stop so the retry overlay reads.
 		velocity *= exp(-SWIM_DAMP * delta)
@@ -224,6 +301,8 @@ func _physics_process(delta: float) -> void:
 	var dir := _input_dir()
 	var grip_pressed := _grip_just_pressed()
 	_tick_absorb(delta)
+	if _attack_just_pressed():
+		spike_burst()
 
 	match state:
 		State.SWIM:

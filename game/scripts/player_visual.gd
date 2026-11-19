@@ -11,12 +11,14 @@ const BODY_R := 110.0
 var base_scale := 0.5
 var health := 1.0
 var gripped := false
+var evolved := false
 
 var body: Sprite2D
 var nucleus_glow: Sprite2D
 var nucleus: Sprite2D
 var dots: Array = []
 var cilia: Node2D
+var spikes: Node2D
 var _t := 0.0
 
 
@@ -57,6 +59,26 @@ func _ready() -> void:
 		s.scale = Vector2(d[1], d[1])
 		add_child(s)
 		dots.append(s)
+
+	# Evolved body: a ring of golden spikes. Hidden until evolution, so the
+	# transformation is visible rather than implied (BACKLOG M3).
+	spikes = Node2D.new()
+	for i in 14:
+		var ang := TAU * float(i) / 14.0
+		var a := ang - 0.085
+		var b := ang + 0.085
+		var r0 := BODY_R * 0.9
+		var r1 := BODY_R * (1.18 if i % 2 == 0 else 1.08)
+		var spike := Polygon2D.new()
+		spike.polygon = PackedVector2Array([
+			Vector2(cos(a), sin(a)) * r0,
+			Vector2(cos(b), sin(b)) * r0,
+			Vector2(cos(ang), sin(ang)) * r1,
+		])
+		spike.color = Color(0.93, 0.79, 0.34, 0.9)
+		spikes.add_child(spike)
+	spikes.visible = false
+	add_child(spikes)
 
 	# Golden nucleus: additive glow halo + solid bright core.
 	var glow_tex: GradientTexture2D = _radial_texture(256, [
@@ -100,6 +122,14 @@ func _radial_texture(size: int, stops: Array, from: Vector2, to: Vector2) -> Gra
 	return gt
 
 
+func set_evolved(value: bool) -> void:
+	evolved = value
+	if spikes != null:
+		spikes.visible = value
+	if body != null:
+		body.modulate = Color(1.16, 1.05, 0.92) if value else Color.WHITE
+
+
 ## Called every physics frame by the parent CharacterBody2D.
 ## dir: movement input direction. speed_frac: 0..1 of max swim speed.
 func set_controlled(delta: float, dir: Vector2, speed_frac: float) -> void:
@@ -128,3 +158,8 @@ func set_controlled(delta: float, dir: Vector2, speed_frac: float) -> void:
 		d.modulate.a = 0.4 + 0.5 * dp
 	cilia.hair_len = 10.0 if gripped else 16.0
 	cilia.set_phase(p, stroke)
+	if spikes != null and evolved:
+		# Slow breathing on the spike ring keeps the new body legible.
+		var sp := 1.0 + 0.03 * sin(TAU * p * 2.0)
+		spikes.scale = Vector2(sp, sp)
+		spikes.rotation = 0.04 * sin(TAU * p)
