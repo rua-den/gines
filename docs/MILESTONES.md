@@ -14,7 +14,7 @@ criteria were observed, not assumed.
 |---|---|---|---|---|
 | 0 | Godot project setup | PASS (2026-11-19) | PASS (owner, 2026-11-15) | **PASS** |
 | 1 | Player movement | PASS (2026-11-19) | **Open** — owner playtest | **REVISE-pending** |
-| 2 | Absorption & survival | — | — | Not started |
+| 2 | Absorption & survival | PASS (2026-11-19) | **Open** — owner playtest | **Automated PASS / human Open** |
 
 ## How the evidence was produced
 
@@ -30,7 +30,11 @@ $godot = "C:\path\to\Godot_v4.7.2-stable_win64_console.exe"
 & $godot --headless --audio-driver Dummy --path game res://scenes/movement_test.tscn --quit-after 5
 & $godot --headless --audio-driver Dummy --path game --script res://tests/grip_detach_check.gd
 & $godot --headless --audio-driver Dummy --path game --script res://tests/demo_verdict_check.gd
+& $godot --headless --audio-driver Dummy --path game --script res://tests/absorption_check.gd
+& $godot --headless --audio-driver Dummy --path game --script res://tests/survival_check.gd
+& $godot --headless --audio-driver Dummy --path game --script res://tests/m2_verdict_check.gd
 & $godot --audio-driver Dummy --path game res://scenes/movement_test.tscn -- --m1-demo --outdir="$(Get-Location)/creative/muse/outputs/experiments"
+& $godot --audio-driver Dummy --path game res://scenes/prototype.tscn -- --m2-demo --outdir="$(Get-Location)/creative/muse/outputs/experiments"
 ```
 
 The demo outdir must be absolute: Godot resolves relative paths against `game/`,
@@ -51,6 +55,9 @@ Screenshots are committed under `creative/muse/outputs/experiments/`:
 | `M1_movement-crawl_v01.png` | CRAWL along the floor |
 | `M1_movement-grip_v01.png` | GRIP under the floating platform |
 | `M1_movement-camera_v01.png` | Camera followed the player across the room |
+| `M2_prototype-absorb_v01.png` | A mote consumed; nutrition 10, health full |
+| `M2_prototype-hit_v01.png` | Predator contact: health 2, player flickering invulnerable |
+| `M2_prototype-retry_v01.png` | Defeat overlay: all health lost, "press E to retry" |
 
 ## Milestone 0 — Project setup
 
@@ -110,7 +117,58 @@ Screenshots are committed under `creative/muse/outputs/experiments/`:
 
 ## Milestone 2 — Absorption & survival
 
-Not started. Scope per `BACKLOG.md`: one resource type, one absorbable
-organism, absorption feedback, one hostile organism, damage/survival states and
-a restart flow — built inside the existing movement room so the prototype has a
-single playable scene.
+- **Objective:** the first loop that can be lost — food that takes time to take,
+  and an organism that punishes taking it at the wrong moment.
+- **Automated decision:** **PASS** (2026-11-19).
+- **Human decision:** **Open** — see the playtest checklist below. "Absorption
+  is understandable and satisfying" and "enemy interaction works" are
+  `DEVELOPMENT_PLAN.md` Phase 1 exit criteria only a player can judge.
+- **Design record:** [`superpowers/specs/2026-11-19-m2-absorption-design.md`](superpowers/specs/2026-11-19-m2-absorption-design.md)
+  — the three absorption verbs considered (contact snatch, grip-feed,
+  channel-hold) and why channel-hold was chosen.
+- **Acceptance evidence:**
+  - *Minimal resource model*: one value (`player.nutrition`) plus a
+    `nutrition_gained` signal; nothing else. HUD shows `Nutrition N`.
+  - *Absorbable organism*: four nutrient motes; holding `interact` within 90 px
+    for 0.75 s consumes one, once. `tests/absorption_check.gd` passes 6/6
+    (completes, release resets, leaving range resets, no double absorb, damage
+    cancels, feeding drag).
+  - *Absorption feedback*: the mote pulses faster while channelled, bursts on
+    consumption, the HUD nutrition line flashes, and the HUD reports channel
+    percentage. No audio — the project has no audio assets yet; this is stated
+    rather than implied.
+  - *Hostile organism*: one predator patrols x 1000–1520, chases inside 420 px,
+    deals 1 damage closer than 66 px, and idles when the player is dead.
+    Chase speed 165 px/s is below the 260 px/s swim cap, so fleeing is always
+    possible.
+  - *Damage and survival*: 3 health, 1.0 s invulnerability, knockback and
+    flicker; defeat emits `died` exactly once. `tests/survival_check.gd` passes
+    6/6 (contact, invulnerability blocks, expires, defeat once, revive, chase
+    vs patrol).
+  - *Recovery flow*: defeat shows an overlay; `interact` revives in place and
+    returns the player to the start position. Nutrition and consumed motes
+    persist — retrying never restarts the application.
+  - *Harness can fail*: `--m2-demo` exits 1 on any failed criterion;
+    `tests/m2_verdict_check.gd` covers that verdict (7 cases). Verified in
+    practice: the first demo run failed (stage 1 timed out because the
+    autopilot collided with the floating platform while the predator waited
+    below), which is exactly the defect the exit code was built to surface.
+- **Known limitations (not failures):**
+  - Damage is distance-based, not a physical collision, so a hit can register
+    slightly before bodies visually touch at 66 px against a 55 px radius.
+  - One predator, four motes, no respawn of consumed motes, no resource loss on
+    death (foundation §9 mentions dropped resources — deliberately deferred).
+  - `prototype.gd` duplicates the room-drawing helpers from `movement_test.gd`;
+    with two scenes a shared module is not yet worth the churn.
+- **Open items — owner playtest checklist:**
+  1. Is it clear that a mote must be channelled (`E` held) rather than touched?
+  2. Does the 0.75 s channel feel like commitment, or like waiting?
+  3. Does the feeding drag (260 → 90 px/s) read as a cost, or as a bug?
+  4. Is the predator's aggro range readable? Can you always break away?
+  5. Do three hearts feel fair against three-hit defeat, and is the retry
+     prompt noticed?
+  6. Does the loop read without instructions: see mote → feed → see predator →
+     avoid or get hit → retry?
+- **Decision rule:** tick PASS if the checklist holds; record **REVISE** with
+  the specific item that failed otherwise.
+

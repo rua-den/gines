@@ -7,7 +7,7 @@ A solo + AI 2D action Metroidvania about the journey of a new life, from a singl
 ## Project status
 
 **Stage:** Pre-production  
-**Current milestone:** Phase 0 — Foundation & Pre-production (Milestone 0 merged 2026-11-15; Milestone 1 player movement merged 2026-11-17, close-out in progress — see the [Milestone Log](docs/MILESTONES.md))
+**Current milestone:** Phase 1 — Core prototype (Milestone 0 merged 2026-11-15; Milestone 1 player movement merged 2026-11-17, close-out merged 2026-11-19; Milestone 2 absorption & survival implemented 2026-11-19, awaiting owner playtest — see the [Milestone Log](docs/MILESTONES.md))
 **Initial target:** A 4–6 hour PC game, with scope validated through a vertical slice.
 
 ## Documentation

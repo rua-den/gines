@@ -1,10 +1,10 @@
 # GENESIS — Godot project
 
-Milestone 0 setup + Milestone 1 player movement. Godot **4.7.2**
-(stable). The project opens and launches into the Milestone 0 test
-scene; the movement test scene (`res://scenes/movement_test.tscn`)
-is where the player can actually move. Milestone decisions and
-evidence are recorded in [`../docs/MILESTONES.md`](../docs/MILESTONES.md).
+Milestone 0 setup + Milestone 1 player movement + Milestone 2 absorption and
+survival. Godot **4.7.2** (stable). The project opens and launches into the
+Milestone 0 test scene; play the prototype at
+`res://scenes/prototype.tscn`. Milestone decisions and evidence are recorded in
+[`../docs/MILESTONES.md`](../docs/MILESTONES.md).
 
 ## Required version
 
@@ -45,16 +45,27 @@ godot --path game
 # Play the movement test room (Milestone 1): swim, crawl, grip
 godot --path game res://scenes/movement_test.tscn
 
+# Play the absorption & survival prototype (Milestone 2): swim, hold E to feed,
+# avoid the predator, retry with E after defeat
+godot --path game res://scenes/prototype.tscn
+
 # Headless smoke check: loads the test scene, prints [M0] READY, exits 0
 godot --headless --audio-driver Dummy --path game res://scenes/test_scene.tscn --quit-after 5
 
 # Headless smoke check for the movement scene (prints [M1] READY, exits 0)
 godot --headless --audio-driver Dummy --path game res://scenes/movement_test.tscn --quit-after 5
 
+# Headless smoke check for the prototype scene (prints [M2] READY, exits 0)
+godot --headless --audio-driver Dummy --path game res://scenes/prototype.tscn --quit-after 5
+
 # Demo autopilot: drives the player through swim -> crawl -> grip ->
 # detach -> camera follow and saves 4 screenshots, then quits
 xvfb-run -a -s "-screen 0 960x540x24" godot --audio-driver Dummy --path game \
   res://scenes/movement_test.tscn -- --m1-demo --outdir=/tmp/m1
+
+# M2 demo autopilot: feed -> get hit -> get defeated -> retry, 3 screenshots
+xvfb-run -a -s "-screen 0 960x540x24" godot --audio-driver Dummy --path game \
+  res://scenes/prototype.tscn -- --m2-demo --outdir=/tmp/m2
 ```
 
 ```sh
@@ -63,6 +74,12 @@ godot --headless --audio-driver Dummy --path game \
   --script res://tests/grip_detach_check.gd
 godot --headless --audio-driver Dummy --path game \
   --script res://tests/demo_verdict_check.gd
+godot --headless --audio-driver Dummy --path game \
+  --script res://tests/absorption_check.gd
+godot --headless --audio-driver Dummy --path game \
+  --script res://tests/survival_check.gd
+godot --headless --audio-driver Dummy --path game \
+  --script res://tests/m2_verdict_check.gd
 ```
 
 ### Windows (PowerShell)
@@ -76,13 +93,19 @@ $godot = "C:\path\to\Godot_v4.7.2-stable_win64_console.exe"
 & $godot --headless --path game --import
 & $godot --headless --audio-driver Dummy --path game res://scenes/test_scene.tscn --quit-after 5
 & $godot --headless --audio-driver Dummy --path game res://scenes/movement_test.tscn --quit-after 5
+& $godot --headless --audio-driver Dummy --path game res://scenes/prototype.tscn --quit-after 5
 & $godot --headless --audio-driver Dummy --path game --script res://tests/grip_detach_check.gd
 & $godot --headless --audio-driver Dummy --path game --script res://tests/demo_verdict_check.gd
+& $godot --headless --audio-driver Dummy --path game --script res://tests/absorption_check.gd
+& $godot --headless --audio-driver Dummy --path game --script res://tests/survival_check.gd
+& $godot --headless --audio-driver Dummy --path game --script res://tests/m2_verdict_check.gd
 
 # Demo autopilot (needs a real window: headless runs cannot capture screenshots).
 # The outdir must be absolute: Godot resolves relative paths against game/.
 & $godot --audio-driver Dummy --path game res://scenes/movement_test.tscn `
   -- --m1-demo --outdir="$PWD/creative/muse/outputs/experiments"
+& $godot --audio-driver Dummy --path game res://scenes/prototype.tscn `
+  -- --m2-demo --outdir="$PWD/creative/muse/outputs/experiments"
 ```
 
 `tools/verify.ps1` runs all of the above and exits non-zero if any check fails.
@@ -102,6 +125,25 @@ any criterion fails (missing screenshot, leaving the room, missing state, camera
 not following). The last line of a run is `[M1] DEMO RESULT: PASS` or `FAIL`.
 `tests/demo_verdict_check.gd` covers that verdict headlessly; a headless demo
 run reports `FAIL` by design because it cannot save screenshots.
+
+`scripts/prototype.gd` follows the same contract for M2 (`[M2] DEMO RESULT`):
+it fails when nothing was absorbed, the predator never landed a hit, no retry
+happened, a screenshot is missing, or the player left the room.
+`tests/m2_verdict_check.gd` covers that verdict in 7 cases.
+
+### Milestone 2 prototype (`res://scenes/prototype.tscn`)
+
+Same room geometry as the movement test, plus the first loop that can be lost.
+
+- **Feed:** hold `E` within 90 px of a golden mote for 0.75 s. The HUD shows
+  channel progress; releasing, leaving range or taking a hit cancels it.
+  Feeding drops the swim cap from 260 to 90 px/s, so feeding near the predator
+  is a gamble.
+- **Survive:** three hearts, 1 s of invulnerability with knockback and flicker.
+- **Retry:** defeat shows an overlay; press `E` to respawn at the start.
+  Nutrition and eaten motes persist.
+- Feedback is visual and HUD only — there are no audio assets in the project
+  yet, so no sound is implied anywhere.
 
 The main scene is `res://scenes/test_scene.tscn`. It shows a scaling
 marker layout and a live input readout. Pressing `Esc`/`P` toggles a
@@ -134,6 +176,12 @@ Movement files (Milestone 1): `scenes/player.tscn` +
 EXP-001 experiment), `scripts/cilia.gd` (procedural cilia),
 `scenes/movement_test.tscn` + `scripts/movement_test.gd` (test room,
 camera, HUD, demo autopilot).
+
+Absorption & survival files (Milestone 2): `scenes/prototype.tscn` +
+`scripts/prototype.gd` (room, HUD, retry flow, demo autopilot),
+`scripts/absorbable.gd` (nutrient mote), `scripts/predator.gd` (hostile
+organism), plus absorption/damage/health on `scripts/player.gd`.
+Design record: `../docs/superpowers/specs/2026-11-19-m2-absorption-design.md`.
 
 Empty folders carry a `.gitkeep` so the layout survives a fresh clone.
 `.godot/` (editor cache) is gitignored; `.import` files **are** committed.

@@ -71,8 +71,12 @@ try {
     Invoke-Check "import project (fresh clone prerequisite)" @("--headless", "--path", "game", "--import") | Out-Null
     Invoke-Check "M0 smoke: test scene loads" @("--headless", "--audio-driver", "Dummy", "--path", "game", "res://scenes/test_scene.tscn", "--quit-after", "5") '\[M0\] READY' | Out-Null
     Invoke-Check "M1 smoke: movement scene loads" @("--headless", "--audio-driver", "Dummy", "--path", "game", "res://scenes/movement_test.tscn", "--quit-after", "5") '\[M1\] READY' | Out-Null
+    Invoke-Check "M2 smoke: prototype scene loads" @("--headless", "--audio-driver", "Dummy", "--path", "game", "res://scenes/prototype.tscn", "--quit-after", "5") '\[M2\] READY' | Out-Null
     Invoke-Check "regression: grip detach contract" @("--headless", "--audio-driver", "Dummy", "--path", "game", "--script", "res://tests/grip_detach_check.gd") 'ALL PASS' | Out-Null
     Invoke-Check "regression: demo verdict can fail" @("--headless", "--audio-driver", "Dummy", "--path", "game", "--script", "res://tests/demo_verdict_check.gd") 'ALL PASS' | Out-Null
+    Invoke-Check "regression: absorption contract" @("--headless", "--audio-driver", "Dummy", "--path", "game", "--script", "res://tests/absorption_check.gd") 'ALL PASS' | Out-Null
+    Invoke-Check "regression: survival contract" @("--headless", "--audio-driver", "Dummy", "--path", "game", "--script", "res://tests/survival_check.gd") 'ALL PASS' | Out-Null
+    Invoke-Check "regression: M2 demo verdict can fail" @("--headless", "--audio-driver", "Dummy", "--path", "game", "--script", "res://tests/m2_verdict_check.gd") 'ALL PASS' | Out-Null
 
     if ($SkipDemo) {
         Write-Host "[SKIP] M1 demo autopilot (-SkipDemo)"
@@ -90,6 +94,7 @@ try {
         $outPath = (Resolve-Path $outPath).Path
         Write-Host "      demo screenshots: $outPath"
         Invoke-Check "M1 demo autopilot (swim/crawl/grip/camera)" @("--audio-driver", "Dummy", "--path", "game", "res://scenes/movement_test.tscn", "--", "--m1-demo", "--outdir=$outPath") 'DEMO RESULT: PASS' | Out-Null
+        Invoke-Check "M2 demo autopilot (absorb/hit/retry)" @("--audio-driver", "Dummy", "--path", "game", "res://scenes/prototype.tscn", "--", "--m2-demo", "--outdir=$outPath") 'DEMO RESULT: PASS' | Out-Null
     }
 }
 finally {

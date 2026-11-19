@@ -35,18 +35,30 @@
 
 ## Milestone 2 — Absorption & survival
 
-- [ ] Define a minimal biological resource data model.
+*Automated acceptance met 2026-11-19; the human "understandable and satisfying"
+check is still open in `MILESTONES.md`.*
+
+- [x] Define a minimal biological resource data model.
   - Acceptance: one resource can be collected and displayed/debugged.
-- [ ] Create one absorbable organism or environmental object.
+  - Evidence: `player.nutrition` + `nutrition_gained` signal; HUD `Nutrition N`.
+- [x] Create one absorbable organism or environmental object.
   - Acceptance: object can be detected and absorbed through a clear interaction.
-- [ ] Implement absorption feedback.
+  - Evidence: four motes, `interact` held inside 90 px for 0.75 s.
+- [x] Implement absorption feedback.
   - Acceptance: player receives immediate visual/audio/UI feedback.
-- [ ] Create one hostile organism.
+  - Evidence: pulse, burst, HUD flash and channel percentage. **Visual/UI only —
+    the project has no audio assets yet**, so there is no audio feedback.
+- [x] Create one hostile organism.
   - Acceptance: enemy can detect or engage the player in a simple test.
-- [ ] Implement basic damage and survival.
+  - Evidence: patrols x 1000–1520, chases inside 420 px, contacts for damage.
+- [x] Implement basic damage and survival.
   - Acceptance: damage, invulnerability/response and defeat states are testable.
-- [ ] Add a basic recovery or restart flow.
+  - Evidence: `tests/survival_check.gd` 6/6 — contact, 1 s invulnerability,
+    expiry, defeat once, revive.
+- [x] Add a basic recovery or restart flow.
   - Acceptance: player can retry the test without restarting the application.
+  - Evidence: defeat overlay → `interact` revives in place; nutrition persists.
+
 
 ## Milestone 3 — First evolution
 

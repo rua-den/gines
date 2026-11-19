@@ -30,15 +30,36 @@ const GRIP_SPEED := 90.0
 const GRIP_PRESS := 30.0
 const GRIP_COOLDOWN := 0.25
 
+# Milestone 2 — absorption and survival.
+const ABSORB_RANGE := 90.0
+const ABSORB_CHANNEL := 0.75
+const FEED_SPEED_CAP := 90.0
+const MAX_HEALTH := 3
+const INVULN_TIME := 1.0
+const KNOCKBACK := 260.0
+
+signal nutrition_gained(amount: float)
+signal damaged(hits_left: int)
+signal died
+
 var state: State = State.SWIM
 var grip_normal := Vector2.UP
+
+# Milestone 2 state. Nutrition is the single prototype resource (BACKLOG M2);
+# there is deliberately no resource dictionary until a second resource earns one.
+var nutrition := 0.0
+var health := MAX_HEALTH
+var dead := false
+var absorb_target: Absorbable = null
 
 # Demo autopilot injection (movement_test.gd sets these).
 var demo_active := false
 var demo_dir := Vector2.ZERO
 var demo_grip_pressed := false
+var demo_interact_held := false
 
 var _grip_cooldown := 0.0
+var _invuln := 0.0
 var _visual: Node2D
 var _state_changes: Array[String] = []
 
@@ -78,6 +99,87 @@ func _grip_just_pressed() -> bool:
 	return Input.is_action_just_pressed("grip")
 
 
+func _interact_held() -> bool:
+	if demo_active:
+		return demo_interact_held
+	return Input.is_action_pressed("interact")
+
+
+## Swim cap for this frame: feeding drags the body down to FEED_SPEED_CAP.
+func speed_cap() -> float:
+	return FEED_SPEED_CAP if absorb_target != null else SWIM_MAX
+
+
+func _find_absorb_target() -> Absorbable:
+	var best: Absorbable = null
+	var best_dist := ABSORB_RANGE
+	for node in get_tree().get_nodes_in_group(Absorbable.GROUP):
+		var mote := node as Absorbable
+		if mote == null or mote.consumed:
+			continue
+		var d := global_position.distance_to(mote.global_position)
+		if d <= best_dist:
+			best = mote
+			best_dist = d
+	return best
+
+
+## Channels the nearest mote while `interact` is held. Releasing, walking out of
+## range, changing target or taking a hit resets the channel without consuming.
+func _tick_absorb(delta: float) -> void:
+	if dead or not _interact_held():
+		_release_absorb()
+		return
+	var target := _find_absorb_target()
+	if target != absorb_target:
+		_release_absorb()
+		absorb_target = target
+	if absorb_target == null:
+		return
+	absorb_target.channel(delta)
+	if absorb_target.progress >= ABSORB_CHANNEL:
+		var mote := absorb_target
+		absorb_target = null
+		var value := mote.consume()
+		nutrition += value
+		nutrition_gained.emit(value)
+
+
+func _release_absorb() -> void:
+	if absorb_target != null and is_instance_valid(absorb_target):
+		absorb_target.cancel_channel()
+	absorb_target = null
+
+
+## Returns true when the hit landed; false during invulnerability or after death.
+func take_damage(amount: int, from_pos: Vector2) -> bool:
+	if dead or _invuln > 0.0:
+		return false
+	health = maxi(health - amount, 0)
+	_invuln = INVULN_TIME
+	_release_absorb()
+	var away := global_position - from_pos
+	if away.length() < 0.001:
+		away = Vector2.UP
+	velocity = away.normalized() * KNOCKBACK
+	damaged.emit(health)
+	if health == 0:
+		dead = true
+		velocity = Vector2.ZERO
+		died.emit()
+	return true
+
+
+## Full health plus a grace window; the scene owns the respawn position.
+func revive() -> void:
+	health = MAX_HEALTH
+	dead = false
+	_invuln = INVULN_TIME
+	velocity = Vector2.ZERO
+	_release_absorb()
+	state = State.SWIM
+
+
 func _set_state(next: State) -> void:
 	if next == state:
 		return
@@ -111,8 +213,17 @@ func _surface_normal() -> Vector2:
 func _physics_process(delta: float) -> void:
 	if _grip_cooldown > 0.0:
 		_grip_cooldown -= delta
+	if _invuln > 0.0:
+		_invuln -= delta
+	if dead:
+		# No input while defeated: drift to a stop so the retry overlay reads.
+		velocity *= exp(-SWIM_DAMP * delta)
+		move_and_slide()
+		_update_visual(delta, Vector2.ZERO)
+		return
 	var dir := _input_dir()
 	var grip_pressed := _grip_just_pressed()
+	_tick_absorb(delta)
 
 	match state:
 		State.SWIM:
@@ -164,9 +275,22 @@ func _physics_process(delta: float) -> void:
 				_set_state(State.SWIM)
 
 	# Visuals follow the same call the EXP-001 protagonist uses.
-	if _visual != null and _visual.has_method("set_controlled"):
+	_update_visual(delta, dir)
+
+
+func _update_visual(delta: float, dir: Vector2) -> void:
+	if _visual == null:
+		return
+	if _visual.has_method("set_controlled"):
 		var speed_frac: float = clampf(velocity.length() / SWIM_MAX, 0.0, 1.0)
 		_visual.set_controlled(delta, dir, speed_frac)
+	# Invulnerable = flicker; defeated = dimmed. Both read without extra UI.
+	if dead:
+		_visual.modulate.a = 0.3
+	elif _invuln > 0.0:
+		_visual.modulate.a = 0.45
+	else:
+		_visual.modulate.a = 1.0
 
 
 func _swim(delta: float, dir: Vector2) -> void:
@@ -174,6 +298,7 @@ func _swim(delta: float, dir: Vector2) -> void:
 		velocity += dir.normalized() * SWIM_ACCEL * delta
 	else:
 		velocity *= exp(-SWIM_DAMP * delta)
-	if velocity.length() > SWIM_MAX:
-		velocity = velocity.normalized() * SWIM_MAX
+	var cap := speed_cap()
+	if velocity.length() > cap:
+		velocity = velocity.normalized() * cap
 	move_and_slide()
