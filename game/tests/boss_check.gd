@@ -16,7 +16,7 @@ extends SceneTree
 ##     --script res://tests/boss_check.gd
 ## Exit code 0 = all cases pass, 1 = at least one failure.
 
-const EXPECTED_CASES := 11
+const EXPECTED_CASES := 12
 const TEST_SAVE := "user://test_boss_arena_save.cfg"
 
 const INVULN_FRAMES := 75 # > PlayerController.INVULN_TIME at 60 Hz, < WEAK_WINDOW
@@ -164,6 +164,31 @@ func _case_burst_spends_one_energy_and_one_health() -> void:
 		and is_equal_approx(energy_after,
 			energy_before - PlayerController.BURST_ENERGY_COST)
 	_check("a fired burst in the exposed window spends exactly one energy and one boss health", ok,
+		"fired=%s hp=%d->%d energy=%.2f->%.2f cost=%.2f" % [
+			fired, hp_before, hp_after, energy_before, energy_after,
+			PlayerController.BURST_ENERGY_COST])
+	boss.queue_free()
+	p.queue_free()
+	await _frames(2)
+
+
+func _case_burst_outside_window_spends_energy_but_deals_no_damage() -> void:
+	var p := _make_player(Vector2(560, 500)) # 60 px, inside BURST_RANGE
+	var boss := _make_boss(Vector2(500, 500), p)
+	boss.phase = "telegraph" # NOT exposed: the burst must spend energy but land nothing
+	p.nutrition = p.EVOLVE_COST
+	p.evolve()
+	var energy_before: float = p.energy
+	var hp_before: int = boss.health
+	var fired: bool = p.spike_burst()
+	var energy_after: float = p.energy # measured before regeneration ticks
+	var hp_after: int = boss.health
+	await _frames(2)
+	var ok: bool = fired \
+		and is_equal_approx(energy_after,
+			energy_before - PlayerController.BURST_ENERGY_COST) \
+		and hp_after == hp_before
+	_check("a burst outside the window spends energy but deals no boss damage", ok,
 		"fired=%s hp=%d->%d energy=%.2f->%.2f cost=%.2f" % [
 			fired, hp_before, hp_after, energy_before, energy_after,
 			PlayerController.BURST_ENERGY_COST])
@@ -324,6 +349,7 @@ func _init() -> void:
 	await _case_player_hurt_only_during_attack()
 	await _case_reset_restores()
 	await _case_burst_spends_one_energy_and_one_health()
+	await _case_burst_outside_window_spends_energy_but_deals_no_damage()
 	await _case_starved_and_cooldown_bursts_have_no_effects()
 	await _case_room_builder_matches_prototype_layout()
 	SaveState.clear(TEST_SAVE)
