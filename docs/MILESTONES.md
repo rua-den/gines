@@ -17,6 +17,7 @@ criteria were observed, not assumed.
 | 2 | Absorption & survival | PASS (2026-11-19) | PASS (owner playtest, 2026-11-19) | **PASS** |
 | 3 | First evolution | PASS (2026-11-19) | PASS (owner playtest, 2026-11-19) | **PASS** |
 | 4 | Energy for the burst | PASS (2026-11-19) | **Open** — owner feel check | **Automated PASS / human Open** |
+| 5 | First boss encounter | PASS (2026-11-21, observed) | **Open** — owner feel check | **Automated PASS / human Open** |
 
 ## How the evidence was produced
 
@@ -319,4 +320,30 @@ Screenshots are committed under `creative/muse/outputs/experiments/`:
   4. Does the pip/number readout communicate affordability before pressing `J`?
   5. Should regeneration start immediately (proposed) or after a short delay?
   6. Does the limit change how you fight the predator in a way you enjoy?
+
+## Milestone 5 — First boss encounter
+
+- **Objective:** one encounter that demands movement, absorption, evolution and
+  energy together, closing Phase 2's last open item.
+- **Automated decision:** **PASS** (2026-11-21). **Human decision:** **Open** —
+  see the checklist below. This is not a milestone PASS; only the owner can
+  record that.
+- **Design record:** [`superpowers/specs/2026-11-20-m5-boss-design.md`](superpowers/specs/2026-11-20-m5-boss-design.md) —
+  every value in it is Proposed, not owner-approved.
+- **Acceptance evidence (observed 2026-11-21, re-run independently):**
+  `pwsh -File tools/verify.ps1 -Godot "<Godot_v4.7.2-stable_win64_console.exe>"`
+  → `VERIFY PASSED: 19 checks`. This includes `M5 smoke: boss arena loads`
+  (`[M5] READY`), `tests/boss_check.gd`, `tests/m5_verdict_check.gd`, and the
+  windowed `M5 demo autopilot` ending in `DEMO RESULT: PASS` with the four named
+  captures `approach`, `telegraph`, `weak-window`, `victory`. `-SkipDemo`
+  produces `VERIFY PASSED: 15 checks` and correctly skips all four demos.
+- **Known limitations (not failures):** procedural gradient visual and no audio
+  assets; the autopilot proves the fight is possible, not that it is fun;
+  balance values have not had a human feel check.
+- **Open items — owner playtest checklist:**
+  1. Can the boss be beaten without reading the README?
+  2. Does the win come from using the evolved body, not from tanking hits?
+  3. Are the telegraph and the weak window legible at a glance?
+  4. Does waiting for energy read as a decision rather than downtime?
+  5. Do the evolution gate and the shelter retry read as fair?
 
