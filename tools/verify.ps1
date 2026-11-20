@@ -1,10 +1,10 @@
-# GENESIS — one-command verification for Milestone 0/1.
+# GENESIS — one-command verification for Milestones 0/1/2/5.
 #
-# Runs the import prerequisite, both headless smoke checks, both headless
-# regression checks and the windowed movement demo, then reports a summary.
-# Exits 0 only if every check passed. The demo check requires a real window
-# (headless runs cannot capture screenshots) — pass -SkipDemo on a machine
-# without a display.
+# Runs the import prerequisite, the headless smoke checks (M0/M1/M2/M5), the
+# headless regression checks and the windowed demos (M1/M2/M3/M5), then reports
+# a summary. Exits 0 only if every check passed. The demo checks require a real
+# window (headless runs cannot capture screenshots) — pass -SkipDemo on a
+# machine without a display.
 #
 # Demo screenshots go to a temp folder by default so verification does not
 # dirty the tracked evidence in creative/muse/outputs/experiments/. Pass
@@ -72,6 +72,7 @@ try {
     Invoke-Check "M0 smoke: test scene loads" @("--headless", "--audio-driver", "Dummy", "--path", "game", "res://scenes/test_scene.tscn", "--quit-after", "5") '\[M0\] READY' | Out-Null
     Invoke-Check "M1 smoke: movement scene loads" @("--headless", "--audio-driver", "Dummy", "--path", "game", "res://scenes/movement_test.tscn", "--quit-after", "5") '\[M1\] READY' | Out-Null
     Invoke-Check "M2 smoke: prototype scene loads" @("--headless", "--audio-driver", "Dummy", "--path", "game", "res://scenes/prototype.tscn", "--quit-after", "5") '\[M2\] READY' | Out-Null
+    Invoke-Check "M5 smoke: boss arena loads" @("--headless", "--audio-driver", "Dummy", "--path", "game", "res://scenes/boss_test.tscn", "--quit-after", "5", "--", "--fresh-save") '\[M5\] READY' | Out-Null
     Invoke-Check "regression: grip detach contract" @("--headless", "--audio-driver", "Dummy", "--path", "game", "--script", "res://tests/grip_detach_check.gd") 'ALL PASS' | Out-Null
     Invoke-Check "regression: demo verdict can fail" @("--headless", "--audio-driver", "Dummy", "--path", "game", "--script", "res://tests/demo_verdict_check.gd") 'ALL PASS' | Out-Null
     Invoke-Check "regression: absorption contract" @("--headless", "--audio-driver", "Dummy", "--path", "game", "--script", "res://tests/absorption_check.gd") 'ALL PASS' | Out-Null
@@ -101,6 +102,7 @@ try {
         Invoke-Check "M1 demo autopilot (swim/crawl/grip/camera)" @("--audio-driver", "Dummy", "--path", "game", "res://scenes/movement_test.tscn", "--", "--m1-demo", "--outdir=$outPath") 'DEMO RESULT: PASS' | Out-Null
         Invoke-Check "M2 demo autopilot (absorb/hit/retry)" @("--audio-driver", "Dummy", "--path", "game", "res://scenes/prototype.tscn", "--", "--m2-demo", "--outdir=$outPath") 'DEMO RESULT: PASS' | Out-Null
         Invoke-Check "M3 demo autopilot (feed/evolve/kill)" @("--audio-driver", "Dummy", "--path", "game", "res://scenes/prototype.tscn", "--", "--m3-demo", "--outdir=$outPath") 'DEMO RESULT: PASS' | Out-Null
+        Invoke-Check "M5 demo autopilot (evolve/telegraph/weak-window/victory)" @("--audio-driver", "Dummy", "--path", "game", "res://scenes/boss_test.tscn", "--", "--m5-demo", "--outdir=$outPath", "--fresh-save") 'DEMO RESULT: PASS' | Out-Null
     }
 }
 finally {

@@ -205,6 +205,34 @@ tuned in playtest:
 Design record: `../docs/superpowers/specs/2026-11-19-m4-energy-design.md`.
 Regression check: `tests/energy_check.gd` (9 cases).
 
+### Milestone 5 — the first boss encounter (owner check open)
+
+Play the arena at `res://scenes/boss_test.tscn`. Collect the three motes, evolve
+at the alcove to open the gate, then read the Rot Bloom's telegraph and burst
+only while its core is exposed (`J`). Defeat returns you to the shelter with
+evolution and nutrition kept and the boss reset.
+
+```powershell
+$godot = "C:\path\to\Godot_v4.7.2-stable_win64_console.exe"
+
+# Play from a clean slate
+& $godot --path game res://scenes/boss_test.tscn -- --fresh-save
+
+# Headless smoke and regressions
+& $godot --headless --audio-driver Dummy --path game res://scenes/boss_test.tscn --quit-after 5 -- --fresh-save
+& $godot --headless --audio-driver Dummy --path game --script res://tests/boss_check.gd
+& $godot --headless --audio-driver Dummy --path game --script res://tests/m5_verdict_check.gd
+
+# Windowed demo: four named captures, DEMO RESULT: PASS / FAIL
+& $godot --audio-driver Dummy --path game res://scenes/boss_test.tscn `
+  -- --m5-demo --outdir="$PWD/creative/muse/outputs/experiments" --fresh-save
+```
+
+The full runner (`pwsh -File tools/verify.ps1 -Godot $godot`) now includes the
+M5 smoke and demo; automated evidence was observed on 2026-11-21. The **owner
+feel check is still open** — see the checklist in
+[`../docs/MILESTONES.md`](../docs/MILESTONES.md). No milestone PASS is implied.
+
 The main scene is `res://scenes/test_scene.tscn`. It shows a scaling
 marker layout and a live input readout. Pressing `Esc`/`P` toggles a
 PAUSED label. In screenshot mode it feeds two real key events (D, E)

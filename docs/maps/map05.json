@@ -1,0 +1,119 @@
+{
+  "artifact_type": "design_only",
+  "schema_version": 1,
+  "id": "map05",
+  "stage": 5,
+  "name": "The Calcium Vault",
+  "developmental_beat": "Mineral deposition: the body gains its first rigid structure.",
+  "plan_refs": [
+    "GAME_DESIGN_FOUNDATION.md §7 (body contraction, dash)",
+    "DEVELOPMENT_PLAN.md §4 (calcium / minerals as an Open future resource)"
+  ],
+  "room": {
+    "width": 1920,
+    "height": 1080,
+    "coordinate_space": "design_only"
+  },
+  "obstacles": [
+    {
+      "id": "vault_floor",
+      "kind": "static_slab",
+      "rect": [0, 980, 1920, 100],
+      "role": "hard floor — crawl surface",
+      "engine_status": "implemented"
+    },
+    {
+      "id": "vault_ceiling",
+      "kind": "static_slab",
+      "rect": [0, 0, 1920, 60],
+      "role": "mineral ceiling",
+      "engine_status": "implemented"
+    },
+    {
+      "id": "crystal_pillar_a",
+      "kind": "static_slab",
+      "rect": [560, 300, 70, 680],
+      "role": "hard pillar; no grip purchase on its face",
+      "engine_status": "implemented"
+    },
+    {
+      "id": "crystal_pillar_b",
+      "kind": "static_slab",
+      "rect": [1180, 60, 70, 720],
+      "role": "second pillar splitting the vault",
+      "engine_status": "implemented"
+    },
+    {
+      "id": "low_grip_tunnel",
+      "kind": "static_slab",
+      "rect": [700, 760, 420, 60],
+      "role": "overhang forming a low tunnel that requires grip",
+      "engine_status": "implemented"
+    },
+    {
+      "id": "mineral_spike_band",
+      "kind": "hazard_zone",
+      "rect": [1250, 840, 480, 140],
+      "role": "contact damage from crystalline growths",
+      "engine_status": "planned",
+      "fallback_until_implemented": "Use a solid slab with the same bounds until contact damage is built."
+    }
+  ],
+  "upgrade": {
+    "id": "body_contraction",
+    "grants": ["body_contraction", "dash"],
+    "name": "Contractile body — dash",
+    "plan_ref": "GAME_DESIGN_FOUNDATION.md §7 (early body contraction; later dash)",
+    "permanent": true,
+    "additive": true,
+    "capacity": { "equipped_limit": null, "status": "Open" },
+    "engine_status": "planned",
+    "softlock_fallback": "Dash is a traversal shortcut, never a gate; swim, crawl and grip cross every required route.",
+    "fallback_until_implemented": "Use the existing swim speed and grip movement until the dash is built.",
+    "note": "Calcium is flavour for this stage only; it is not implemented as a second meter."
+  },
+  "boss": {
+    "id": "the_vine_lash",
+    "name": "The Vine Lash",
+    "kind": "hostile_organism",
+    "engine_status": "planned",
+    "loop": "A rooted tendril sweeps a long horizontal arc, then recoils.",
+    "weak_window": "1.2 s recoil after each sweep.",
+    "gate_requires": ["spike_ring"],
+    "retry_rule": "shelter",
+    "softlock_fallback": "The sweep is readable and can also be grip-dodged above or below; dash is an option, not a requirement.",
+    "fallback_until_implemented": "Use the Rot Bloom's lash phase until the sweeping tendril is built.",
+    "solution": "Dash through the recoil, or grip to the ceiling and burst during the same window."
+  },
+  "deferred_world_fields": {
+    "visual_identity": { "value": null, "status": "Open" },
+    "secrets": { "entries": [], "status": "Open" },
+    "return_signals": { "entries": [], "status": "Open" },
+    "narrative_discoveries": { "entries": [], "status": "Open" }
+  },
+  "checkpoint": {
+    "kind": "shelter",
+    "position": [300, 500]
+  },
+  "resources": {
+    "model": "single_nutrition",
+    "meter_count": 1,
+    "sources": ["nutrient motes"],
+    "future_resource": {
+      "name": "calcium",
+      "status": "Open",
+      "note": "Inspiration only; no structural resource meter is created by this map."
+    }
+  },
+  "narrative": {
+    "mother_role": "absent",
+    "beat": "Hardness appears for the first time; the world gains edges."
+  },
+  "progression": {
+    "model": "illustrative_linear",
+    "entry_requires": "map04.boss_defeated",
+    "exit_unlocks": "map06"
+  },
+  "stage_status": "planned",
+  "status": "Proposed"
+}

@@ -1,0 +1,108 @@
+{
+  "artifact_type": "design_only",
+  "schema_version": 1,
+  "id": "map03",
+  "stage": 3,
+  "name": "The Golden Alcove",
+  "developmental_beat": "Implantation: the first permanent change to the body.",
+  "plan_refs": [
+    "DEVELOPMENT_PLAN.md §5; GAME_DESIGN_FOUNDATION.md §8/§10 (evolution, permanent body parts)",
+    "MILESTONES.md M3 (first evolution)",
+    "docs/superpowers/specs/2026-11-20-m5-boss-design.md (M5 first boss; owner verdict pending)"
+  ],
+  "room": {
+    "width": 1920,
+    "height": 1080,
+    "coordinate_space": "design_only"
+  },
+  "obstacles": [
+    {
+      "id": "floor_membrane",
+      "kind": "static_slab",
+      "rect": [0, 980, 1920, 100],
+      "role": "floor — crawl surface",
+      "engine_status": "implemented"
+    },
+    {
+      "id": "upper_membrane",
+      "kind": "static_slab",
+      "rect": [0, 0, 1920, 60],
+      "role": "ceiling",
+      "engine_status": "implemented"
+    },
+    {
+      "id": "floating_platform",
+      "kind": "static_slab",
+      "rect": [700, 640, 500, 40],
+      "role": "platform before the alcove — grip route",
+      "engine_status": "implemented"
+    },
+    {
+      "id": "vertical_pillar",
+      "kind": "static_slab",
+      "rect": [1400, 700, 60, 280],
+      "role": "pillar dividing the approach corridor",
+      "engine_status": "implemented"
+    },
+    {
+      "id": "evolution_gate",
+      "kind": "gate",
+      "rect": [1080, 60, 40, 920],
+      "role": "blocks the arena until the body is evolved",
+      "engine_status": "implemented"
+    }
+  ],
+  "upgrade": {
+    "id": "spike_ring",
+    "grants": ["spike_ring", "spike_burst"],
+    "name": "Ciliated spike ring",
+    "plan_ref": "DEVELOPMENT_PLAN.md §5/§8; MILESTONES.md M3",
+    "permanent": true,
+    "additive": true,
+    "capacity": { "equipped_limit": null, "status": "Open" },
+    "engine_status": "implemented",
+    "softlock_fallback": "The evolution is free once 30 nutrition is gathered; the alcove cannot be consumed elsewhere.",
+    "fallback_until_implemented": null
+  },
+  "boss": {
+    "id": "rot_bloom",
+    "name": "The Rot Bloom",
+    "kind": "hostile_organism",
+    "engine_status": "implemented",
+    "loop": "idle 0.4 s → telegraph 0.6 s → attack 0.25 s → exposed 1.5 s, alternating lash and spore.",
+    "weak_window": "1.5 s exposed core; body damage only in this phase, 6 health total.",
+    "gate_requires": ["spike_ring"],
+    "retry_rule": "shelter",
+    "softlock_fallback": "An unevolved player sees a dormant bloom and a HUD prompt, never an unwinnable fight; energy regenerates at 1/s.",
+    "fallback_until_implemented": null,
+    "solution": "Burst inside the exposed window; shelter retry resets the boss but keeps evolution and nutrition."
+  },
+  "deferred_world_fields": {
+    "visual_identity": { "value": null, "status": "Open" },
+    "secrets": { "entries": [], "status": "Open" },
+    "return_signals": { "entries": [], "status": "Open" },
+    "narrative_discoveries": { "entries": [], "status": "Open" }
+  },
+  "checkpoint": {
+    "kind": "shelter",
+    "position": [1020, 900]
+  },
+  "resources": {
+    "model": "single_nutrition",
+    "meter_count": 1,
+    "ability_pools": ["energy"],
+    "sources": ["nutrient motes"],
+    "future_resource": null
+  },
+  "narrative": {
+    "mother_role": "absent",
+    "beat": "A golden alcove glows like a promise; the change it grants is irreversible."
+  },
+  "progression": {
+    "model": "illustrative_linear",
+    "entry_requires": "map02.boss_defeated",
+    "exit_unlocks": "map04"
+  },
+  "stage_status": "implemented",
+  "status": "Proposed"
+}
