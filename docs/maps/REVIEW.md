@@ -38,14 +38,15 @@ The checker can fail, so its success is evidence rather than a formality.
 ## Per-map alignment
 
 “Code exists” means the named upgrade/boss is present in `game/scripts/`;
-it does **not** mean a milestone was accepted. M4's human check is open and M5
-has no recorded verdict.
+it does **not** mean a milestone was accepted. M4's human check is open; M5 has
+an observed automated PASS with its human feel check open
+(see `docs/MILESTONES.md`). Neither has a milestone verdict.
 
 | Map | Obstacles | Upgrade (code exists) | Boss (code exists) | Plan alignment | Progression safety | Design status |
 |---|---|---|---|---|---|---|
 | 01 The First Cell | 4 slabs | `surface_grip` + `crawl` (yes) | The Drifter (no; built from Predator) | `GDF §7` early movement | Two dodge routes | aligned; linear model Open |
 | 02 The Divide | 4 slabs | `absorption_channel` (yes) | The Splitter (no) | `GDF §8` / `DEV §4` absorption | Motes regenerate | aligned; linear model Open |
-| 03 The Golden Alcove | 4 slabs + gate | `spike_ring` + `spike_burst` (yes) | Rot Bloom (yes) | `DEV §5`; `GDF §8/§10` | Gate blocks unevolved player | aligned; M5 verdict not recorded |
+| 03 The Golden Alcove | 4 slabs + gate | `spike_ring` + `spike_burst` (yes) | Rot Bloom (yes) | `DEV §5`; `GDF §8/§10` | Gate blocks unevolved player | aligned; M5 automated evidence recorded, human check open |
 | 04 The Pulse | 4 slabs + planned hazard | `energy_pool` (yes) | The Pulse Maw (no) | `DEV §4` energy pool | Energy regenerates; M4 human check open | aligned; energy is an ability pool, not a meter |
 | 05 The Calcium Vault | 5 slabs + planned hazard | `body_contraction` → dash (no) | The Vine Lash (no) | `GDF §7` contraction/dash | Dash is a shortcut, not a gate | **Open** — early-tier contraction placed mid-game |
 | 06 The Budding Field | 5 slabs | run + jump + strike (no) | The Gnawer (no) | `GDF §7` later movement | Existing burst still works | **Open** — dash precedes run/jump in the listed ladder |
