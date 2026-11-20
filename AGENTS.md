@@ -36,6 +36,20 @@ This repository contains a local copy of the official [obra/superpowers](https:/
 - Do not skip a workflow step merely to move faster. If a step is genuinely inapplicable, state why briefly.
 - Do not edit vendored upstream skills in place. Add GENESIS-specific guidance here or create a clearly named project skill instead.
 
+## Game harness
+
+The game-making layer lives in `harness/` (profile, templates, scripts) with
+skills in `.agents/skills/game-*` and commands in `.opencode/commands/`.
+
+- Read `harness/project.md` before game design, build, feel, art, verify or
+  scope work; it holds the engine, commands, statuses and scope guard.
+- Use the matching skill: `game-design`, `game-build`, `game-feel`,
+  `game-verify`, `game-art`, `game-scope`.
+- After changing the harness, run `pwsh -File harness/scripts/check.ps1` and
+  expect `HARNESS CHECK PASSED`.
+- The harness never approves a design, art direction or milestone; only the
+  project owner does. Its reports are evidence, not decisions.
+
 ## GENESIS-specific engineering rules
 
 - Prototype the smallest playable loop before building broad content.
