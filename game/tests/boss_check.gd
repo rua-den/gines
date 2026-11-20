@@ -1,0 +1,221 @@
+extends SceneTree
+## Headless regression check: the M5 boss state machine and damage gating.
+##
+## Contract (see bloom_boss.gd):
+##   * The boss takes body damage only while `phase == "exposed"`.
+##   * A refused hit deals nothing and emits nothing.
+##   * Defeat emits `defeated` exactly once and freezes the boss.
+##   * The boss hurts the player only during the `attack` phase (once per phase).
+##   * `reset()` restores health, defeat state and phase.
+##   * The boss joins the "predator" group so spike_burst() can reach it —
+##     one accepted burst spends exactly one energy and one boss health,
+##     and starved / cooldown bursts have no side effects.
+##
+## Run:
+##   godot --headless --audio-driver Dummy --path game \
+##     --script res://tests/boss_check.gd
+## Exit code 0 = all cases pass, 1 = at least one failure.
+
+const EXPECTED_CASES := 7
+
+const INVULN_FRAMES := 75 # > PlayerController.INVULN_TIME at 60 Hz, < WEAK_WINDOW
+
+var _passed := 0
+var _failed := 0
+
+
+func _frames(n: int) -> void:
+	for i in n:
+		await physics_frame
+
+
+func _make_player(pos := Vector2(500, 500)) -> PlayerController:
+	var p: PlayerController = load("res://scenes/player.tscn").instantiate()
+	p.position = pos
+	p.demo_active = true
+	p.demo_dir = Vector2.ZERO
+	get_root().add_child(p)
+	return p
+
+
+func _make_boss(pos: Vector2, player: PlayerController) -> BloomBoss:
+	var boss := BloomBoss.new()
+	boss.position = pos
+	boss.set_player(player)
+	get_root().add_child(boss)
+	return boss
+
+
+func _check(label: String, ok: bool, detail: String = "") -> void:
+	if ok:
+		_passed += 1
+	else:
+		_failed += 1
+	print("[T] %s %-46s %s" % ["PASS" if ok else "FAIL", label, detail])
+
+
+func _case_exposed_is_only_vulnerable_phase() -> void:
+	var p := _make_player()
+	var boss := _make_boss(Vector2(500, 500), p)
+	boss.phase = "exposed"
+	var first: bool = boss.take_damage(1)
+	var after_first: int = boss.health
+	boss.phase = "telegraph"
+	var second: bool = boss.take_damage(1)
+	var after_second: int = boss.health
+	var ok: bool = first and after_first == BloomBoss.MAX_HEALTH - 1 \
+		and not second and after_second == after_first
+	_check("exposed window is the only vulnerable phase", ok,
+		"first=%s hp=%d second=%s hp=%d" % [first, after_first, second, after_second])
+	boss.queue_free()
+	p.queue_free()
+	await _frames(2)
+
+
+func _case_refusal_emits_nothing() -> void:
+	var p := _make_player()
+	var boss := _make_boss(Vector2(500, 500), p)
+	var emissions := [0]
+	boss.defeated.connect(func(): emissions[0] += 1)
+	boss.phase = "idle"
+	var before: int = boss.health
+	var fired: bool = boss.take_damage(2)
+	var ok: bool = not fired and boss.health == before \
+		and not boss.is_defeated and emissions[0] == 0
+	_check("refusal deals no damage and emits nothing", ok,
+		"fired=%s hp=%d defeated=%s emissions=%d" % [
+			fired, boss.health, boss.is_defeated, emissions[0]])
+	boss.queue_free()
+	p.queue_free()
+	await _frames(2)
+
+
+func _case_defeat_emits_once_and_freezes() -> void:
+	var p := _make_player()
+	var boss := _make_boss(Vector2(500, 500), p)
+	var emissions := [0]
+	boss.defeated.connect(func(): emissions[0] += 1)
+	boss.health = 1
+	boss.phase = "exposed"
+	var first: bool = boss.take_damage(1)
+	var second: bool = boss.take_damage(1)
+	var ok: bool = first and not second and emissions[0] == 1 \
+		and boss.is_defeated and boss.health == 0
+	_check("defeat emits once and freezes the boss", ok,
+		"first=%s second=%s emissions=%d defeated=%s hp=%d" % [
+			first, second, emissions[0], boss.is_defeated, boss.health])
+	boss.queue_free()
+	p.queue_free()
+	await _frames(2)
+
+
+func _case_player_hurt_only_during_attack() -> void:
+	var p := _make_player(Vector2(520, 500)) # 20 px from the boss, inside RADIUS
+	var boss := _make_boss(Vector2(500, 500), p)
+	boss.phase = "attack"
+	await _frames(1)
+	var after_attack: int = p.health
+	p.revive()
+	# Switch to exposed immediately so no further attack can land, then wait out
+	# invulnerability: otherwise the exposed check would pass vacuously.
+	boss.phase = "exposed"
+	await _frames(INVULN_FRAMES)
+	var after_exposed: int = p.health
+	var ok: bool = after_attack == PlayerController.MAX_HEALTH - 1 \
+		and after_exposed == PlayerController.MAX_HEALTH
+	_check("player is hurt only during the attack phase", ok,
+		"after_attack=%d after_exposed=%d max=%d invuln_frames=%d" % [
+			after_attack, after_exposed, PlayerController.MAX_HEALTH, INVULN_FRAMES])
+	boss.queue_free()
+	p.queue_free()
+	await _frames(2)
+
+
+func _case_reset_restores() -> void:
+	var p := _make_player()
+	var boss := _make_boss(Vector2(500, 500), p)
+	boss.health = 1
+	boss.phase = "exposed"
+	boss.take_damage(1)
+	boss.reset()
+	var ok: bool = boss.health == BloomBoss.MAX_HEALTH \
+		and not boss.is_defeated and boss.phase == "idle"
+	_check("reset restores health and phase", ok,
+		"hp=%d defeated=%s phase=%s" % [boss.health, boss.is_defeated, boss.phase])
+	boss.queue_free()
+	p.queue_free()
+	await _frames(2)
+
+
+func _case_burst_spends_one_energy_and_one_health() -> void:
+	var p := _make_player(Vector2(560, 500)) # 60 px, inside BURST_RANGE
+	var boss := _make_boss(Vector2(500, 500), p)
+	boss.phase = "exposed"
+	p.nutrition = p.EVOLVE_COST
+	p.evolve()
+	var energy_before: float = p.energy
+	var hp_before: int = boss.health
+	var fired: bool = p.spike_burst()
+	var energy_after: float = p.energy # measured before regeneration ticks
+	var hp_after: int = boss.health
+	await _frames(2)
+	var ok: bool = fired and hp_after == hp_before - 1 \
+		and is_equal_approx(energy_after,
+			energy_before - PlayerController.BURST_ENERGY_COST)
+	_check("a fired burst in the exposed window spends exactly one energy and one boss health", ok,
+		"fired=%s hp=%d->%d energy=%.2f->%.2f cost=%.2f" % [
+			fired, hp_before, hp_after, energy_before, energy_after,
+			PlayerController.BURST_ENERGY_COST])
+	boss.queue_free()
+	p.queue_free()
+	await _frames(2)
+
+
+func _case_starved_and_cooldown_bursts_have_no_effects() -> void:
+	var p := _make_player(Vector2(560, 500)) # inside BURST_RANGE
+	var boss := _make_boss(Vector2(500, 500), p)
+	boss.phase = "exposed"
+	p.evolved = true
+	p.energy = 0.0
+	var starved: bool = p.spike_burst()
+	var hp_after_starved: int = boss.health
+	var energy_after_starved: float = p.energy
+	p.energy = p.MAX_ENERGY
+	var first: bool = p.spike_burst()
+	var hp_after_first: int = boss.health
+	var energy_after_first: float = p.energy
+	var second: bool = p.spike_burst() # immediately: inside the 0.8 s cooldown
+	var hp_after_second: int = boss.health
+	var energy_after_second: float = p.energy
+	await _frames(2)
+	var ok: bool = not starved \
+		and hp_after_starved == BloomBoss.MAX_HEALTH \
+		and is_zero_approx(energy_after_starved) \
+		and first and hp_after_first == BloomBoss.MAX_HEALTH - 1 \
+		and is_equal_approx(energy_after_first,
+			p.MAX_ENERGY - PlayerController.BURST_ENERGY_COST) \
+		and not second and hp_after_second == hp_after_first \
+		and is_equal_approx(energy_after_second, energy_after_first)
+	_check("starved and cooldown bursts have no side effects", ok,
+		"starved=%s hp=%d first=%s hp=%d second=%s hp=%d energy=%.2f" % [
+			starved, hp_after_starved, first, hp_after_first,
+			second, hp_after_second, energy_after_second])
+	boss.queue_free()
+	p.queue_free()
+	await _frames(2)
+
+
+func _init() -> void:
+	await _frames(2)
+	await _case_exposed_is_only_vulnerable_phase()
+	await _case_refusal_emits_nothing()
+	await _case_defeat_emits_once_and_freezes()
+	await _case_player_hurt_only_during_attack()
+	await _case_reset_restores()
+	await _case_burst_spends_one_energy_and_one_health()
+	await _case_starved_and_cooldown_bursts_have_no_effects()
+	if _passed + _failed != EXPECTED_CASES:
+		_failed += 1
+		print("[T] FAIL only %d of %d cases reported" % [_passed + _failed, EXPECTED_CASES])
+	print("[T] boss_check: ", "ALL PASS" if _failed == 0 else "%d FAILED" % _failed)
+	quit(0 if _failed == 0 else 1)
