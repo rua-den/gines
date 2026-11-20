@@ -16,7 +16,7 @@ extends SceneTree
 ##     --script res://tests/boss_check.gd
 ## Exit code 0 = all cases pass, 1 = at least one failure.
 
-const EXPECTED_CASES := 7
+const EXPECTED_CASES := 8
 
 const INVULN_FRAMES := 75 # > PlayerController.INVULN_TIME at 60 Hz, < WEAK_WINDOW
 
@@ -205,6 +205,33 @@ func _case_starved_and_cooldown_bursts_have_no_effects() -> void:
 	await _frames(2)
 
 
+func _case_room_builder_matches_prototype_layout() -> void:
+	var host := Node2D.new()
+	get_root().add_child(host)
+	var room := Rect2(0, 0, 1920, 1080)
+	var floor_top := 1020.0
+	RoomBuilder.build_room(host, room, floor_top, [])
+	var bodies: Array[StaticBody2D] = []
+	for child in host.get_children():
+		if child is StaticBody2D:
+			bodies.append(child)
+	var expected_floor := Rect2(0, floor_top, room.size.x, room.size.y - floor_top)
+	var floor_bounds := Rect2()
+	if not bodies.is_empty():
+		var shape_node: CollisionShape2D = bodies[0].get_child(0) as CollisionShape2D
+		if shape_node != null:
+			var shape: RectangleShape2D = shape_node.shape as RectangleShape2D
+			if shape != null:
+				floor_bounds = Rect2(shape_node.position - shape.size / 2.0, shape.size)
+	var ok: bool = bodies.size() == 6 \
+		and floor_bounds.position.is_equal_approx(expected_floor.position) \
+		and floor_bounds.size.is_equal_approx(expected_floor.size)
+	_check("room builder matches the prototype slab layout", ok,
+		"bodies=%d floor=%s expected=%s" % [bodies.size(), floor_bounds, expected_floor])
+	host.queue_free()
+	await _frames(2)
+
+
 func _init() -> void:
 	await _frames(2)
 	await _case_exposed_is_only_vulnerable_phase()
@@ -214,6 +241,7 @@ func _init() -> void:
 	await _case_reset_restores()
 	await _case_burst_spends_one_energy_and_one_health()
 	await _case_starved_and_cooldown_bursts_have_no_effects()
+	await _case_room_builder_matches_prototype_layout()
 	if _passed + _failed != EXPECTED_CASES:
 		_failed += 1
 		print("[T] FAIL only %d of %d cases reported" % [_passed + _failed, EXPECTED_CASES])

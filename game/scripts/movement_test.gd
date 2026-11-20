@@ -163,37 +163,8 @@ func _build_background() -> void:
 		_motes.append(m)
 
 
-func _add_static_rect(x0: float, y0: float, x1: float, y1: float) -> void:
-	var body := StaticBody2D.new()
-	body.collision_layer = 2
-	body.collision_mask = 0
-	var shape := CollisionShape2D.new()
-	var rect := RectangleShape2D.new()
-	rect.size = Vector2(x1 - x0, y1 - y0)
-	shape.shape = rect
-	shape.position = Vector2((x0 + x1) / 2.0, (y0 + y1) / 2.0)
-	body.add_child(shape)
-	var poly := Polygon2D.new()
-	poly.polygon = PackedVector2Array([
-		Vector2(x0, y0), Vector2(x1, y0), Vector2(x1, y1), Vector2(x0, y1),
-	])
-	poly.color = SLAB
-	body.add_child(poly)
-	var edge := Line2D.new()
-	edge.points = PackedVector2Array([Vector2(x0, y0), Vector2(x1, y0)])
-	edge.width = 3.0
-	edge.default_color = SLAB_EDGE
-	body.add_child(edge)
-	add_child(body)
-
-
 func _build_room() -> void:
-	_add_static_rect(0, FLOOR_TOP, 1920, 1080) # floor
-	_add_static_rect(0, 0, 1920, 60) # ceiling
-	_add_static_rect(0, 0, 60, 1080) # left wall
-	_add_static_rect(1860, 0, 1920, 1080) # right wall
-	_add_static_rect(700, 640, 1200, 680) # floating platform
-	_add_static_rect(1400, 700, 1460, FLOOR_TOP) # vertical pillar
+	RoomBuilder.build_room(self, ROOM, FLOOR_TOP, [])
 
 
 func _build_player() -> void:
