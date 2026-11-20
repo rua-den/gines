@@ -1,0 +1,110 @@
+{
+  "artifact_type": "design_only",
+  "schema_version": 1,
+  "id": "map08",
+  "stage": 8,
+  "name": "The Passage",
+  "developmental_beat": "Birth: the last playable stage, ending in a cinematic.",
+  "plan_refs": [
+    "DEVELOPMENT_PLAN.md §6 (final stage is playable; birth as culmination)",
+    "GAME_DESIGN_FOUNDATION.md §12 (happiness with a little sadness)",
+    "GAME_DESIGN_FOUNDATION.md §7 (combos, mastery-oriented combat)"
+  ],
+  "room": {
+    "width": 1920,
+    "height": 1080,
+    "coordinate_space": "design_only"
+  },
+  "obstacles": [
+    {
+      "id": "passage_floor",
+      "kind": "static_slab",
+      "rect": [0, 980, 1920, 100],
+      "role": "floor of the final corridor",
+      "engine_status": "implemented"
+    },
+    {
+      "id": "passage_ceiling",
+      "kind": "static_slab",
+      "rect": [0, 0, 1920, 60],
+      "role": "ceiling",
+      "engine_status": "implemented"
+    },
+    {
+      "id": "constriction_upper",
+      "kind": "static_slab",
+      "rect": [700, 60, 90, 520],
+      "role": "upper constriction leaving a low route",
+      "engine_status": "implemented"
+    },
+    {
+      "id": "constriction_lower",
+      "kind": "static_slab",
+      "rect": [700, 720, 90, 260],
+      "role": "lower constriction paired with the upper one",
+      "engine_status": "implemented"
+    },
+    {
+      "id": "final_membrane",
+      "kind": "gate",
+      "rect": [1700, 60, 40, 920],
+      "role": "last membrane; opens only when the overgrowth is defeated",
+      "engine_status": "planned",
+      "fallback_until_implemented": "Use the implemented hide-on-defeat gate pattern from the Rot Bloom arena."
+    }
+  ],
+  "upgrade": {
+    "id": "integrated_form",
+    "grants": ["integrated_form", "combo_mastery"],
+    "name": "Integrated form — combo mastery",
+    "plan_ref": "GAME_DESIGN_FOUNDATION.md §7 later game (multiple-button combos, mastery)",
+    "permanent": true,
+    "additive": true,
+    "capacity": { "equipped_limit": null, "status": "Open" },
+    "engine_status": "planned",
+    "softlock_fallback": "The final boss accepts any prior offensive unlock; the combo is mastery, not a required key.",
+    "fallback_until_implemented": "Use the existing spike burst for the finale until combo inputs are built.",
+    "note": "Birth is the culmination; no post-birth simulation is implied."
+  },
+  "boss": {
+    "id": "the_last_overgrowth",
+    "name": "The Last Overgrowth",
+    "kind": "hostile_organism",
+    "engine_status": "planned",
+    "loop": "A tangled cellular mass that alternates constriction and opening a soft core.",
+    "weak_window": "1.6 s while the core is open between constrictions.",
+    "gate_requires": ["spike_ring", "energy_pool"],
+    "retry_rule": "shelter",
+    "softlock_fallback": "The mother guides but never fights; energy regenerates, and the spike burst alone can finish the fight if later parts are absent.",
+    "fallback_until_implemented": "Use the Rot Bloom loop with a larger body and a final-hall backdrop.",
+    "solution": "Read the constriction rhythm, then spend any earned offensive unlock during the open core."
+  },
+  "deferred_world_fields": {
+    "visual_identity": { "value": null, "status": "Open" },
+    "secrets": { "entries": [], "status": "Open" },
+    "return_signals": { "entries": [], "status": "Open" },
+    "narrative_discoveries": { "entries": [], "status": "Open" }
+  },
+  "checkpoint": {
+    "kind": "shelter",
+    "position": [300, 520]
+  },
+  "resources": {
+    "model": "single_nutrition",
+    "meter_count": 1,
+    "ability_pools": ["energy"],
+    "sources": ["nutrient motes", "remains of the overgrowth"],
+    "future_resource": null
+  },
+  "narrative": {
+    "mother_role": "guide_only",
+    "beat": "Heartbeat and voice carry the player through the passage; after the membrane opens, birth plays as a cinematic — happiness with a little sadness."
+  },
+  "progression": {
+    "model": "illustrative_linear",
+    "entry_requires": "map07.boss_defeated",
+    "exit_unlocks": "birth"
+  },
+  "stage_status": "planned",
+  "status": "Proposed"
+}

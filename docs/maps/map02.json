@@ -1,0 +1,100 @@
+{
+  "artifact_type": "design_only",
+  "schema_version": 1,
+  "id": "map02",
+  "stage": 2,
+  "name": "The Divide",
+  "developmental_beat": "Cleavage: one body becomes a crowded cluster of dividing cells.",
+  "plan_refs": [
+    "GAME_DESIGN_FOUNDATION.md §7 (early: absorption, hiding and survival)",
+    "MILESTONES.md M2 (absorption & survival)"
+  ],
+  "room": {
+    "width": 1920,
+    "height": 1080,
+    "coordinate_space": "design_only"
+  },
+  "obstacles": [
+    {
+      "id": "floor_membrane",
+      "kind": "static_slab",
+      "rect": [0, 980, 1920, 100],
+      "role": "floor — crawl surface",
+      "engine_status": "implemented"
+    },
+    {
+      "id": "upper_membrane",
+      "kind": "static_slab",
+      "rect": [0, 0, 1920, 60],
+      "role": "ceiling — limits vertical escape",
+      "engine_status": "implemented"
+    },
+    {
+      "id": "division_wall_left",
+      "kind": "static_slab",
+      "rect": [700, 300, 80, 680],
+      "role": "divider leaving a narrow crawl slit at its base",
+      "engine_status": "implemented"
+    },
+    {
+      "id": "division_wall_right",
+      "kind": "static_slab",
+      "rect": [1280, 60, 80, 700],
+      "role": "second divider forcing a route change",
+      "engine_status": "implemented"
+    }
+  ],
+  "upgrade": {
+    "id": "absorption_channel",
+    "grants": ["absorption_channel", "nutrition"],
+    "name": "Feed: channelled absorption",
+    "plan_ref": "DEVELOPMENT_PLAN.md §4/§7; MILESTONES.md M2",
+    "permanent": true,
+    "additive": true,
+    "capacity": { "equipped_limit": null, "status": "Open" },
+    "engine_status": "implemented",
+    "softlock_fallback": "Motes regenerate across the room, so feeding can never be permanently missed.",
+    "fallback_until_implemented": null
+  },
+  "boss": {
+    "id": "the_splitter",
+    "name": "The Splitter",
+    "kind": "hostile_organism",
+    "engine_status": "planned",
+    "built_from": "Predator",
+    "loop": "Chases in one body; at half health it divides into two smaller threats.",
+    "weak_window": "Both halves are exposed for 1 s immediately after division.",
+    "gate_requires": ["absorption_channel"],
+    "retry_rule": "shelter",
+    "softlock_fallback": "The Splitter can be outrun and both halves can be absorbed for nutrition.",
+    "fallback_until_implemented": "Use two Predator instances until the division behaviour is built.",
+    "solution": "Feed before the chamber narrows, then absorb both halves in the exposure window."
+  },
+  "deferred_world_fields": {
+    "visual_identity": { "value": null, "status": "Open" },
+    "secrets": { "entries": [], "status": "Open" },
+    "return_signals": { "entries": [], "status": "Open" },
+    "narrative_discoveries": { "entries": [], "status": "Open" }
+  },
+  "checkpoint": {
+    "kind": "shelter",
+    "position": [320, 520]
+  },
+  "resources": {
+    "model": "single_nutrition",
+    "meter_count": 1,
+    "sources": ["nutrient motes", "absorbed Splitter halves"],
+    "future_resource": null
+  },
+  "narrative": {
+    "mother_role": "absent",
+    "beat": "A faint rhythm becomes audible; it is not yet identified as a heartbeat."
+  },
+  "progression": {
+    "model": "illustrative_linear",
+    "entry_requires": "map01.boss_defeated",
+    "exit_unlocks": "map03"
+  },
+  "stage_status": "partial",
+  "status": "Proposed"
+}
