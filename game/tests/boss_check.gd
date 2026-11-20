@@ -16,7 +16,8 @@ extends SceneTree
 ##     --script res://tests/boss_check.gd
 ## Exit code 0 = all cases pass, 1 = at least one failure.
 
-const EXPECTED_CASES := 8
+const EXPECTED_CASES := 11
+const TEST_SAVE := "user://test_boss_arena_save.cfg"
 
 const INVULN_FRAMES := 75 # > PlayerController.INVULN_TIME at 60 Hz, < WEAK_WINDOW
 
@@ -232,6 +233,89 @@ func _case_room_builder_matches_prototype_layout() -> void:
 	await _frames(2)
 
 
+# ------------------------------------------------------- arena / gate / retry
+
+## Instantiates the real arena scene with an isolated save path so a stale
+## profile can never make the gate open before the case says so.
+func _make_fight() -> Node:
+	var packed: PackedScene = load("res://scenes/boss_test.tscn")
+	if packed == null:
+		return null
+	var fight: Node = packed.instantiate()
+	fight.set("_save_path", TEST_SAVE)
+	get_root().add_child(fight)
+	return fight
+
+
+func _case_gate_blocks_unevolved() -> void:
+	var fight: Node = _make_fight()
+	if fight == null:
+		_check("gate blocks an unevolved player", false, "missing BossFight scene")
+		return
+	await _frames(2)
+	fight.player.nutrition = 0.0
+	var boss = fight.boss
+	var before: int = boss.health
+	# Force the exposed phase so the only reason no damage lands is the gate.
+	boss.phase = "exposed"
+	var fired: bool = fight.player.spike_burst()
+	var ok: bool = not fight.gate_open() and boss.player == null \
+		and not fired and boss.health == before
+	_check("gate blocks an unevolved player", ok,
+		"gate_open=%s boss_player=%s fired=%s hp=%d->%d" % [
+			fight.gate_open(), boss.player, fired, before, boss.health])
+	fight.queue_free()
+	SaveState.clear(TEST_SAVE)
+	await _frames(2)
+
+
+func _case_gate_opens_after_evolution() -> void:
+	var fight: Node = _make_fight()
+	if fight == null:
+		_check("gate opens after evolution", false, "missing BossFight scene")
+		return
+	await _frames(2)
+	fight.player.nutrition = fight.player.EVOLVE_COST
+	var did: bool = fight.player.evolve()
+	await _frames(2)
+	var ok: bool = did and fight.gate_open() and fight.boss.player == fight.player
+	_check("gate opens after evolution", ok,
+		"evolved=%s gate_open=%s boss_player=%s" % [
+			did, fight.gate_open(), fight.boss.player])
+	fight.queue_free()
+	SaveState.clear(TEST_SAVE)
+	await _frames(2)
+
+
+func _case_shelter_retry_keeps_progress() -> void:
+	var fight: Node = _make_fight()
+	if fight == null:
+		_check("shelter retry resets the fight but keeps progress", false, "missing BossFight scene")
+		return
+	await _frames(2)
+	fight.player.nutrition = fight.player.EVOLVE_COST
+	fight.player.evolve()
+	await _frames(2)
+	var boss = fight.boss
+	boss.phase = "exposed"
+	boss.take_damage(4) # 6 -> 2, so reset() has something to restore
+	fight.player.nutrition = 42.0
+	fight.player.take_damage(PlayerController.MAX_HEALTH, Vector2.ZERO)
+	fight.retry()
+	var ok: bool = fight.player.health == PlayerController.MAX_HEALTH \
+		and is_equal_approx(fight.player.energy, PlayerController.MAX_ENERGY) \
+		and boss.health == BloomBoss.MAX_HEALTH \
+		and fight.player.evolved \
+		and is_equal_approx(fight.player.nutrition, 42.0)
+	_check("shelter retry resets the fight but keeps progress", ok,
+		"hp=%d energy=%.2f boss_hp=%d evolved=%s nutrition=%.1f" % [
+			fight.player.health, fight.player.energy, boss.health,
+			fight.player.evolved, fight.player.nutrition])
+	fight.queue_free()
+	SaveState.clear(TEST_SAVE)
+	await _frames(2)
+
+
 func _init() -> void:
 	await _frames(2)
 	await _case_exposed_is_only_vulnerable_phase()
@@ -242,6 +326,10 @@ func _init() -> void:
 	await _case_burst_spends_one_energy_and_one_health()
 	await _case_starved_and_cooldown_bursts_have_no_effects()
 	await _case_room_builder_matches_prototype_layout()
+	SaveState.clear(TEST_SAVE)
+	await _case_gate_blocks_unevolved()
+	await _case_gate_opens_after_evolution()
+	await _case_shelter_retry_keeps_progress()
 	if _passed + _failed != EXPECTED_CASES:
 		_failed += 1
 		print("[T] FAIL only %d of %d cases reported" % [_passed + _failed, EXPECTED_CASES])
