@@ -80,6 +80,8 @@ try {
     Invoke-Check "regression: evolution contract" @("--headless", "--audio-driver", "Dummy", "--path", "game", "--script", "res://tests/evolution_check.gd") 'ALL PASS' | Out-Null
     Invoke-Check "regression: energy contract" @("--headless", "--audio-driver", "Dummy", "--path", "game", "--script", "res://tests/energy_check.gd") 'ALL PASS' | Out-Null
     Invoke-Check "regression: M3 demo verdict can fail" @("--headless", "--audio-driver", "Dummy", "--path", "game", "--script", "res://tests/m3_verdict_check.gd") 'ALL PASS' | Out-Null
+    Invoke-Check "regression: boss state machine contract" @("--headless", "--audio-driver", "Dummy", "--path", "game", "--script", "res://tests/boss_check.gd") 'ALL PASS' | Out-Null
+    Invoke-Check "regression: M5 demo verdict can fail" @("--headless", "--audio-driver", "Dummy", "--path", "game", "--script", "res://tests/m5_verdict_check.gd") 'ALL PASS' | Out-Null
 
     if ($SkipDemo) {
         Write-Host "[SKIP] M1 demo autopilot (-SkipDemo)"

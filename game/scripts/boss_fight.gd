@@ -24,6 +24,10 @@ const BOSS_START := Vector2(1560, 520)
 const ROUTE_X := 1820.0
 # Named, not counted: a duplicated capture cannot stand in for a missing one.
 const M5_SHOTS := ["approach", "telegraph", "weak-window", "victory"]
+# Demo cadence. A failed run must end rather than hang the verifier.
+const DEMO_TIMEOUT := 45.0
+# Outside the boss's 60 px attack radius, inside our 130 px burst reach.
+const STANDOFF := 95.0
 
 const BG := Color(0.05, 0.16, 0.18)
 const GATE_FILL := Color(0.30, 0.08, 0.24, 0.92)
@@ -57,6 +61,17 @@ var _save_path := SaveState.DEFAULT_PATH
 var _fresh_save := false
 var m5_demo := false
 
+# M5 demo autopilot state (observations feed the verdict, never the real save).
+var outdir := ""
+var _bursts := 0
+var _captured: Array[String] = []
+var _pending_capture := ""
+var _capture_timer := 0.0
+var _stage := 0
+var _stage_timer := 0.0
+var _run_timer := 0.0
+var _done := false
+
 
 func _ready() -> void:
 	# The root stays ALWAYS so the pause key works; every actor is PAUSABLE.
@@ -67,6 +82,8 @@ func _ready() -> void:
 			_fresh_save = true
 		elif arg == "--m5-demo":
 			m5_demo = true
+		elif arg.begins_with("--outdir="):
+			outdir = arg.trim_prefix("--outdir=")
 	if _fresh_save:
 		SaveState.clear(_save_path)
 	_build_background()
@@ -94,7 +111,7 @@ func _ready() -> void:
 		_open_gate()
 	if m5_demo:
 		player.demo_active = true
-		print("[M5] demo mode")
+		print("[M5] demo mode, outdir=", outdir)
 
 
 func _input(event: InputEvent) -> void:
@@ -113,6 +130,13 @@ func _process(delta: float) -> void:
 	_update_hud()
 	if not player.dead and not m5_demo and Input.is_action_just_pressed("interact"):
 		_try_evolve()
+	if m5_demo and not _done:
+		_m5_demo_update(delta)
+	if _pending_capture != "":
+		_capture_timer -= delta
+		if _capture_timer <= 0.0:
+			_save_capture(_pending_capture)
+			_pending_capture = ""
 
 
 # ------------------------------------------------------------------ gameplay
@@ -275,6 +299,7 @@ func _on_damaged(_hits_left: int) -> void:
 
 ## The burst's only feedback until there is audio: one expanding ring per shot.
 func _on_burst_fired(at: Vector2) -> void:
+	_bursts += 1
 	var ring := BurstRing.new()
 	add_child(ring)
 	ring.global_position = at
@@ -395,3 +420,178 @@ func _update_hud() -> void:
 		prompt_label.text = "Telegraph — dodge the bloom"
 	else:
 		prompt_label.text = "Wait for the core to open"
+
+
+# --------------------------------------------------------------------- demo
+
+func _nearest_mote() -> Absorbable:
+	var best: Absorbable = null
+	var best_dist := 1e9
+	for mote in motes:
+		if mote.consumed:
+			continue
+		var d := player.global_position.distance_to(mote.global_position)
+		if d < best_dist:
+			best = mote
+			best_dist = d
+	return best
+
+
+func _advance_stage(next: int) -> void:
+	_stage = next
+	_stage_timer = 0.0
+
+
+func _capture(name: String) -> void:
+	_pending_capture = name
+	_capture_timer = 0.2
+
+
+func _m5_demo_update(delta: float) -> void:
+	_stage_timer += delta
+	_run_timer += delta
+	if _run_timer > DEMO_TIMEOUT:
+		print("[M5] demo timed out at stage ", _stage)
+		_finish_demo()
+		return
+	match _stage:
+		0:
+			_m5_absorb_step()
+		1:
+			_m5_evolve_step()
+		2:
+			_m5_approach_step()
+		3:
+			_m5_combat_step()
+		4:
+			if _pending_capture == "" and _stage_timer > 0.3:
+				_finish_demo()
+
+
+func _m5_absorb_step() -> void:
+	var mote := _nearest_mote()
+	if player.nutrition >= player.EVOLVE_COST or mote == null:
+		player.demo_dir = Vector2.ZERO
+		player.demo_interact_held = false
+		_advance_stage(1)
+		return
+	var to_mote := mote.global_position - player.global_position
+	player.demo_dir = to_mote.normalized() if to_mote.length() > 40.0 else Vector2.ZERO
+	player.demo_interact_held = to_mote.length() <= PlayerController.ABSORB_RANGE - 5.0
+
+
+func _m5_evolve_step() -> void:
+	var to_zone := zone.global_position - player.global_position
+	player.demo_dir = to_zone.normalized() if to_zone.length() > 25.0 else Vector2.ZERO
+	player.demo_interact_held = false
+	if zone.in_range(player.global_position) and _pending_capture == "":
+		player.demo_dir = Vector2.ZERO
+		if player.can_evolve() and _try_evolve():
+			_advance_stage(2)
+
+
+func _m5_approach_step() -> void:
+	player.demo_interact_held = false
+	player.demo_attack_pressed = false
+	var to_boss := boss.global_position - player.global_position
+	if not _captured.has("approach") and to_boss.length() <= 380.0 and _pending_capture == "":
+		player.demo_dir = Vector2.ZERO
+		_capture("approach")
+		_advance_stage(3)
+		return
+	player.demo_dir = to_boss.normalized()
+
+
+func _m5_combat_step() -> void:
+	player.demo_interact_held = false
+	if boss_defeated or boss.is_defeated:
+		player.demo_dir = Vector2.ZERO
+		player.demo_attack_pressed = false
+		if _pending_capture == "":
+			if not _captured.has("victory"):
+				_capture("victory")
+			else:
+				_advance_stage(4)
+		return
+
+	var to_boss := boss.global_position - player.global_position
+	var d := to_boss.length()
+	if boss.phase == "telegraph" and not _captured.has("telegraph") and _pending_capture == "":
+		player.demo_dir = Vector2.ZERO
+		player.demo_attack_pressed = false
+		_capture("telegraph")
+		return
+	if boss.phase == "exposed":
+		if not _captured.has("weak-window") and _pending_capture == "":
+			player.demo_dir = Vector2.ZERO
+			player.demo_attack_pressed = false
+			_capture("weak-window")
+			return
+		player.demo_attack_pressed = d <= PlayerController.BURST_RANGE - 8.0 \
+			and player.can_attack()
+	else:
+		player.demo_attack_pressed = false
+
+	# A hurt body backs out of attack range until the core opens again.
+	if player.health <= 1 and boss.phase != "exposed":
+		player.demo_dir = -to_boss.normalized()
+		return
+	# Hold the standoff band: close in when far, retreat if a hit pushed us in.
+	if d > STANDOFF + 10.0:
+		player.demo_dir = to_boss.normalized()
+	elif d < STANDOFF - 10.0:
+		player.demo_dir = -to_boss.normalized()
+	else:
+		player.demo_dir = Vector2.ZERO
+
+
+## Turns the run's observations into failed criteria; empty means PASS.
+## Kept pure so m5_verdict_check.gd can call it on an instance not in the tree.
+func evaluate_m5_demo(did_evolve: bool, did_defeat: bool, shots: Array,
+		nutrition_left: float, burst_count: int) -> Array[String]:
+	var failures: Array[String] = []
+	if not did_evolve:
+		failures.append("evolution: the body never evolved")
+	if not did_defeat:
+		failures.append("boss: the Rot Bloom was never defeated")
+	if nutrition_left < 0.0:
+		failures.append("economy: nutrition %.0f is negative (evolution was not paid for)" % nutrition_left)
+	if burst_count < 3:
+		failures.append("bursts: only %d fired (need at least 3)" % burst_count)
+	for shot in M5_SHOTS:
+		if not shots.has(shot):
+			failures.append("captures: missing the \"%s\" screenshot (saved %s)" % [shot, shots])
+	return failures
+
+
+func _finish_demo() -> void:
+	_done = true
+	player.demo_dir = Vector2.ZERO
+	player.demo_interact_held = false
+	player.demo_attack_pressed = false
+	print("[M5] DEMO DONE")
+	print("[M5] evolved=", player.evolved, " defeated=", boss_defeated,
+		" bursts=", _bursts, " nutrition=", player.nutrition, " health=", player.health)
+	print("[M5] captures: ", _captured)
+	var failures := evaluate_m5_demo(player.evolved, boss_defeated, _captured,
+		player.nutrition, _bursts)
+	for failure in failures:
+		print("[M5] FAILED: ", failure)
+	print("[M5] DEMO RESULT: ", "PASS" if failures.is_empty() else "FAIL")
+	get_tree().quit(0 if failures.is_empty() else 1)
+
+
+func _save_capture(name: String) -> void:
+	var path := outdir + "/M5_boss-" + name + "_v01.png"
+	var tex := get_viewport().get_texture()
+	var img: Image = tex.get_image() if tex != null else null
+	if img == null or img.is_empty():
+		push_error("[M5] SCREENSHOT failed: no viewport image (headless run?)")
+		return
+	var err: Error = img.save_png(path)
+	if err != OK:
+		push_error("[M5] SCREENSHOT failed: %s (%d)" % [path, err])
+	else:
+		_captured.append(name)
+		print("[M5] SCREENSHOT saved: ", path)
+
