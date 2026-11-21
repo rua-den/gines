@@ -9,14 +9,14 @@ constants from `game/scripts/room_builder.gd`.
 build**. They never mean owner acceptance, and they are **not** milestone
 verdicts (PASS / REVISE / BLOCKED are reserved by `harness/project.md`).
 
-Every map01.json … map08.json has these fields:
+Every map01.json … map09.json has these fields:
 
 | Field | Type | Rule |
 |---|---|---|
 | `artifact_type` | string | `"design_only"` |
 | `schema_version` | int | `1` |
 | `id` | string | `"mapNN"`, matching the file name |
-| `stage` | int | 1–8, matching the file name |
+| `stage` | int | 1–9, matching the file name |
 | `name` | string | working name, not approved art direction |
 | `developmental_beat` | string | the life stage this map expresses |
 | `plan_refs` | string[] | source links; ability ladder → `GAME_DESIGN_FOUNDATION.md §7`, core loop → §8 / `DEVELOPMENT_PLAN.md §4`, evolution → §10 / DEV PLAN §5 |
@@ -72,7 +72,10 @@ exist so the requirement is visible, but no deferred content is invented.
 not the Confirmed world graph. `GAME_DESIGN_FOUNDATION.md §11` and
 `DEVELOPMENT_PLAN.md §6` require one interconnected world with abilities that
 open routes, sequence breaks and return-later signals. Do **not** feed
-`entry_requires` to a loader as the real progression graph.
+`entry_requires` to a loader as the real progression graph. The illustrative
+chain runs 1..9: `map01.entry_requires` is null, maps 02–09 require the previous
+map's `boss_defeated`, maps 01–08 unlock the next map, and `map09.exit_unlocks`
+is the terminal `"birth"`. Birth itself stays an Open cinematic.
 
 `stage_status` is **derived from features**, not asserted:
 - upgrade and boss both `implemented` → `implemented`
@@ -82,7 +85,7 @@ open routes, sequence breaks and return-later signals. Do **not** feed
 Implemented ids today (the checker's whitelist; code exists, not owner-accepted):
 - upgrades: `surface_grip`, `crawl`, `absorption_channel`, `spike_ring`,
   `spike_burst`, `energy_pool`
-- bosses: `rot_bloom`
+- bosses: `rot_bloom`, `the_convergence`
 - obstacle kinds: `static_slab`, `gate`
 
 Everything else is `planned` and must state `fallback_until_implemented`.

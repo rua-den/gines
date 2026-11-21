@@ -34,6 +34,7 @@ const MAP_ENTRIES: Array[Dictionary] = [
 	{"name": "map06", "path": "res://scenes/map06.tscn", "status": "proposed placeholder"},
 	{"name": "map07", "path": "res://scenes/map07.tscn", "status": "proposed placeholder"},
 	{"name": "map08", "path": "res://scenes/map08.tscn", "status": "proposed placeholder"},
+	{"name": "map09", "path": "res://scenes/map09.tscn", "status": "proposed placeholder"},
 ]
 
 const ALLOWED_STATUS := ["code exists", "placeholder", "proposed placeholder"]

@@ -25,13 +25,13 @@ function Check([bool]$Condition, [string]$File, [string]$Rule) {
 }
 
 $implementedUpgrades = @('surface_grip', 'crawl', 'absorption_channel', 'spike_ring', 'spike_burst', 'energy_pool')
-$implementedBosses = @('rot_bloom')
+$implementedBosses = @('rot_bloom', 'the_convergence')
 $implementedObstacleKinds = @('static_slab', 'gate')
 $validObstacleKinds = @('static_slab', 'gate', 'hazard_zone')
 $statuses = @('implemented', 'planned')
 
 $files = @(Get-ChildItem -LiteralPath $MapsDir -Filter 'map*.json' -File | Sort-Object Name)
-Check ($files.Count -eq 8) 'directory' ("expected 8 map files, found {0}" -f $files.Count)
+Check ($files.Count -eq 9) 'directory' ("expected 9 map files, found {0}" -f $files.Count)
 
 $parsed = @{}
 foreach ($file in $files) {
@@ -149,7 +149,7 @@ foreach ($file in $files) {
 	Check ($map.stage_status -eq $expectedStatus) $name "stage_status must be derived as $expectedStatus"
 }
 
-for ($i = 1; $i -le 8; $i++) {
+for ($i = 1; $i -le 9; $i++) {
 	$key = 'map{0:00}.json' -f $i
 	if (-not $parsed.ContainsKey($key)) {
 		continue
@@ -162,11 +162,11 @@ for ($i = 1; $i -le 8; $i++) {
 		$previous = 'map{0:00}' -f ($i - 1)
 		Check ($progression.entry_requires -eq ($previous + '.boss_defeated')) $key "entry_requires must be $previous.boss_defeated"
 	}
-	if ($i -lt 8) {
+	if ($i -lt 9) {
 		$next = 'map{0:00}' -f ($i + 1)
 		Check ($progression.exit_unlocks -eq $next) $key "exit_unlocks must be $next"
 	} else {
-		Check ($progression.exit_unlocks -eq 'birth') $key 'map08.exit_unlocks must be "birth"'
+		Check ($progression.exit_unlocks -eq 'birth') $key 'map09.exit_unlocks must be "birth"'
 	}
 }
 
@@ -304,6 +304,20 @@ if (Test-Path -LiteralPath $runtimePath08 -PathType Leaf) {
 	$runtimeHash08 = (Get-FileHash -LiteralPath $runtimePath08 -Algorithm SHA256).Hash
 }
 Check (($canonicalHash08 -ne '') -and ($canonicalHash08 -eq $runtimeHash08)) 'map08.json' 'runtime map copy drifted from canonical'
+
+# Runtime copy drift guard: game/resources/maps/map09.json is a generated copy
+# of the canonical docs/maps/map09.json. Read-only — never rewrites the copy.
+$canonicalPath09 = Join-Path $root 'docs/maps/map09.json'
+$runtimePath09 = Join-Path $root 'game/resources/maps/map09.json'
+$canonicalHash09 = ''
+$runtimeHash09 = ''
+if (Test-Path -LiteralPath $canonicalPath09 -PathType Leaf) {
+	$canonicalHash09 = (Get-FileHash -LiteralPath $canonicalPath09 -Algorithm SHA256).Hash
+}
+if (Test-Path -LiteralPath $runtimePath09 -PathType Leaf) {
+	$runtimeHash09 = (Get-FileHash -LiteralPath $runtimePath09 -Algorithm SHA256).Hash
+}
+Check (($canonicalHash09 -ne '') -and ($canonicalHash09 -eq $runtimeHash09)) 'map09.json' 'runtime map copy drifted from canonical'
 
 if ($script:errors.Count -gt 0) {
 	foreach ($failure in $script:errors) {

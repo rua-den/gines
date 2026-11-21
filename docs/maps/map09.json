@@ -1,0 +1,117 @@
+{
+  "artifact_type": "design_only",
+  "schema_version": 1,
+  "id": "map09",
+  "stage": 9,
+  "name": "The Convergence",
+  "developmental_beat": "The last hostile organism before birth: everything learned — movement, absorption, evolution and energy — must be read and spent in one encounter.",
+  "plan_refs": [
+    "docs/superpowers/specs/2026-11-21-final-boss-map-design.md (Task 1: FinalBoss and map09)",
+    "docs/superpowers/plans/2026-11-21-final-boss-map.md (Task 1)",
+    "DEVELOPMENT_PLAN.md §6 (final stage is playable; birth as culmination)"
+  ],
+  "room": {
+    "width": 1920,
+    "height": 1080,
+    "coordinate_space": "design_only"
+  },
+  "obstacles": [
+    {
+      "id": "convergence_floor",
+      "kind": "static_slab",
+      "rect": [0, 980, 1920, 100],
+      "role": "floor of the convergence chamber",
+      "engine_status": "implemented"
+    },
+    {
+      "id": "convergence_ceiling",
+      "kind": "static_slab",
+      "rect": [0, 0, 1920, 60],
+      "role": "ceiling of the chamber",
+      "engine_status": "implemented"
+    },
+    {
+      "id": "convergence_shelf_low",
+      "kind": "static_slab",
+      "rect": [1240, 760, 220, 220],
+      "role": "low shelf framing the approach",
+      "engine_status": "implemented"
+    },
+    {
+      "id": "convergence_shelf_high",
+      "kind": "static_slab",
+      "rect": [1160, 120, 300, 90],
+      "role": "high shelf above the approach",
+      "engine_status": "implemented"
+    },
+    {
+      "id": "convergence_spur",
+      "kind": "static_slab",
+      "rect": [1600, 260, 90, 220],
+      "role": "spur guarding the organism's approach lane",
+      "engine_status": "implemented"
+    },
+    {
+      "id": "convergence_membrane",
+      "kind": "gate",
+      "rect": [1500, 60, 40, 920],
+      "role": "last membrane; opens once the body is integrated, before the organism is engaged",
+      "engine_status": "planned",
+      "fallback_until_implemented": "Use the implemented hide-on-defeat evolution gate pattern from the Rot Bloom arena."
+    }
+  ],
+  "upgrade": {
+    "id": "final_form",
+    "grants": ["integrated_form"],
+    "name": "Final form — integrated body",
+    "plan_ref": "GAME_DESIGN_FOUNDATION.md §7 later game (integration of earlier adaptations)",
+    "permanent": true,
+    "additive": true,
+    "capacity": { "equipped_limit": null, "status": "Open" },
+    "engine_status": "planned",
+    "softlock_fallback": "The convergence accepts any earlier offensive unlock; integration is a mastery signpost, never a required key.",
+    "fallback_until_implemented": "Use the existing spike burst with the already-learned body; no combo input is invented.",
+    "note": "Birth remains a cinematic and is Open; this upgrade does not implement it."
+  },
+  "boss": {
+    "id": "the_convergence",
+    "name": "The Convergence",
+    "kind": "hostile_organism",
+    "engine_status": "implemented",
+    "loop": "Phase 1 repeats the learned idle 0.4 s → telegraph 0.6 s → attack 0.25 s → exposed 1.5 s rhythm, alternating lash and spore. At 6 of 12 health it enters second_wind: telegraph 0.45 s, exposed 1.1 s.",
+    "weak_window": "1.5 s exposed core in phase 1; 1.1 s in second_wind. Body damage is accepted only while exposed.",
+    "gate_requires": ["spike_ring", "energy_pool"],
+    "retry_rule": "shelter",
+    "softlock_fallback": "Second wind only shortens timings — it never removes the weak window or adds an untelegraphed kill. Energy regenerates at 1/s; shelter retry resets the boss to 12 and keeps evolution and nutrition.",
+    "fallback_until_implemented": null,
+    "solution": "Read the familiar rhythm, then survive the faster second wind; burst only inside the exposed window. The mother guides but never fights."
+  },
+  "deferred_world_fields": {
+    "visual_identity": { "value": null, "status": "Open" },
+    "secrets": { "entries": [], "status": "Open" },
+    "return_signals": { "entries": [], "status": "Open" },
+    "narrative_discoveries": { "entries": [], "status": "Open" }
+  },
+  "checkpoint": {
+    "kind": "shelter",
+    "position": [300, 520]
+  },
+  "resources": {
+    "model": "single_nutrition",
+    "meter_count": 1,
+    "ability_pools": ["energy"],
+    "sources": ["nutrient motes", "remains of the convergence"],
+    "future_resource": null
+  },
+  "narrative": {
+    "mother_role": "guide_only",
+    "beat": "Voice and heartbeat carry the player through the convergence; once it stills, the route to birth opens. Birth itself stays a cinematic, not an implemented sequence, and the mother is never a boss."
+  },
+  "progression": {
+    "model": "illustrative_linear",
+    "entry_requires": "map08.boss_defeated",
+    "exit_unlocks": "birth"
+  },
+  "stage_status": "partial",
+  "status": "Proposed"
+}

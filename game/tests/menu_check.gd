@@ -18,12 +18,11 @@ extends SceneTree
 
 const EXPECTED_CASES := 12
 
-# The brief's enumeration is authoritative: Region Slice + map01..map08 = 9
-# entries ("10" was an orchestrator typo corrected in the ruling).
-const EXPECTED_MAP_COUNT := 9
+# Region Slice + map01..map09 = 10 entries.
+const EXPECTED_MAP_COUNT := 10
 
-# Nine paths actually exist today: region_slice, the map01 JSON runner, and
-# map02..map08. map01 routes to the JSON runner because no map01.tscn exists.
+# Ten paths exist today: region_slice, the map01 JSON runner, and map02..map09.
+# map01 routes to the JSON runner because no map01.tscn exists.
 const EXPECTED_PATHS: Array[String] = [
 	"res://scenes/region_slice.tscn",
 	"res://scenes/map_runner.tscn",
@@ -34,6 +33,7 @@ const EXPECTED_PATHS: Array[String] = [
 	"res://scenes/map06.tscn",
 	"res://scenes/map07.tscn",
 	"res://scenes/map08.tscn",
+	"res://scenes/map09.tscn",
 ]
 
 const ALLOWED_STATUS := ["code exists", "placeholder", "proposed placeholder"]
@@ -181,7 +181,7 @@ func _case_map_select_entries_honest() -> void:
 		var line: String = "%s %s" % [str(e.get("name", "")), str(e.get("status", ""))]
 		if line.contains("Approved") or line.contains("final"):
 			wording_ok = false
-	_check("Map Select has 9 honest entries", count_ok and status_ok and wording_ok,
+	_check("Map Select has 10 honest entries", count_ok and status_ok and wording_ok,
 		"count=%d expected=%d status_ok=%s wording_ok=%s" % [
 			entries.size(), EXPECTED_MAP_COUNT, status_ok, wording_ok])
 	await _dispose(menu)
@@ -198,7 +198,7 @@ func _case_map_select_paths_correct() -> void:
 	for p in paths:
 		if not EXPECTED_PATHS.has(p) or not ResourceLoader.exists(p):
 			all_known = false
-	_check("all 9 map paths are correct and exist",
+	_check("all 10 map paths are correct and exist",
 		paths.size() == EXPECTED_MAP_COUNT and all_known,
 		"paths=%d known=%s" % [paths.size(), paths])
 	await _dispose(menu)

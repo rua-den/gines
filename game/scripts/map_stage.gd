@@ -20,12 +20,12 @@ const MAP_DIR := "res://resources/maps/"
 const PLAYER_SCENE := "res://scenes/player.tscn"
 ## Capability whitelists: declarations of what this build can execute, not
 ## per-map requirements. Adding an id here is an honest feature flag.
-const SUPPORTED_MAP_IDS := ["map03", "map02", "map04", "map05", "map06", "map07", "map08"]
+const SUPPORTED_MAP_IDS := ["map03", "map02", "map04", "map05", "map06", "map07", "map08", "map09"]
 ## map04's planned `the_pulse_maw` and map05's planned `the_vine_lash` are
 ## deliberately NOT whitelisted: neither has a built_from, so their documented
 ## Rot Bloom fallbacks resolve to the labeled BloomBoss placeholder (Proposed,
 ## design-only) via _boss_kind()/_spawn_bloom().
-const SUPPORTED_BOSS_IDS := ["rot_bloom"]
+const SUPPORTED_BOSS_IDS := ["rot_bloom", "the_convergence"]
 const SUPPORTED_BUILT_FROM := "Predator"
 const SUPPORTED_OBSTACLE_KINDS := ["static_slab", "gate", "hazard_zone"]
 ## Implemented upgrade grants (schema v1 whitelist). Adding an id here is an
@@ -202,6 +202,8 @@ func _load_map() -> Dictionary:
 ## built_from entities are named failures, never an empty spawn.
 func _boss_kind(boss_data: Dictionary) -> String:
 	var boss_id := str(boss_data.get("id", ""))
+	if boss_id == "the_convergence":
+		return "final_boss"
 	if SUPPORTED_BOSS_IDS.has(boss_id):
 		return "rot_bloom"
 	var fallback: Variant = boss_data.get("fallback_until_implemented", null)
@@ -536,6 +538,8 @@ func _build_boss(data: Dictionary) -> void:
 	match _boss_kind(boss_data):
 		"rot_bloom":
 			_spawn_bloom(boss_id, false)
+		"final_boss":
+			_spawn_final_boss(boss_id)
 		"built_from":
 			# An unimplemented boss uses its built_from entity as an explicitly
 			# Proposed placeholder, never as an approved enemy.
@@ -578,6 +582,19 @@ func _spawn_bloom(boss_id: String, placeholder: bool) -> void:
 	add_child(bloom)
 	bloom.defeated.connect(_on_boss_defeated)
 	boss = bloom
+
+
+## The implemented final boss: a real FinalBoss (two-phase BloomBoss subclass),
+## never a labeled placeholder. The rest of the fight uses the same gated burst
+## and shelter retry path as every other BloomBoss-derived stage.
+func _spawn_final_boss(boss_id: String) -> void:
+	var final_boss := FinalBoss.new()
+	final_boss.position = boss_pos
+	final_boss.name = "TheConvergence"
+	final_boss.set_meta("boss_id", boss_id)
+	add_child(final_boss)
+	final_boss.defeated.connect(_on_boss_defeated)
+	boss = final_boss
 
 
 func _build_camera() -> void:

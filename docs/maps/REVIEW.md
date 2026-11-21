@@ -1,7 +1,7 @@
-# Review — 8-Stage Map Set
+# Review — 9-Stage Map Set
 
 **Date:** 2026-11-21
-**Scope:** design review of `map01.json` … `map08.json` against the original
+**Scope:** design review of `map01.json` … `map09.json` against the original
 repository plan. This is **not** a milestone decision. `PASS / REVISE / BLOCKED`
 are reserved for milestones by `harness/project.md`; the word PASS below appears
 only in the validator's observed output, which is a check result, not a verdict.
@@ -12,7 +12,7 @@ Every map remains **Proposed**; production scope is unchanged.
 Command: `pwsh -NoProfile -File tools/check_maps.ps1`
 
 ```text
-MAP CHECK PASSED - 8 maps, 533 checks
+MAP CHECK PASSED - 9 maps, 614 checks
 exit=0
 ```
 
@@ -52,11 +52,12 @@ an observed automated PASS with its human feel check open
 | 06 The Budding Field | 5 slabs | run + jump + strike (no) | The Gnawer (no) | `GDF §7` later movement | Existing burst still works | **Open** — dash precedes run/jump in the listed ladder |
 | 07 The Neural Bloom | 4 slabs + planned band | double-jump + glide + veil (no) | The Sentinel (no) | `GDF §7` gliding/hiding | Veil optional; two routes | **Open** — early-tier hiding placed late |
 | 08 The Passage | 4 slabs + planned membrane | `integrated_form` (no) | The Last Overgrowth (no) | `DEV §6` final stage; `GDF §12` | Mother guides, never fights; any prior weapon works | aligned to ending; build variety Open |
+| 09 The Convergence | 5 slabs + planned membrane | `final_form` → `integrated_form` (no) | The Convergence (yes — FinalBoss, two-phase) | `DEV §6` ante-birth encounter; spec/plan 2026-11-21 | Gate needs evolution; energy regenerates; shelter retry resets a 12-HP boss to full | aligned; upgrade planned + boss implemented → `partial`; birth cinematic Open |
 
 ## Cross-map checks
 
-- **Chain:** map01 `null → map02`; map02–07 `mapNN.boss_defeated → map(N+1)`;
-  map08 `map07.boss_defeated → birth`. All eight links verified by the checker.
+- **Chain:** map01 `null → map02`; map02–08 `mapNN.boss_defeated → map(N+1)`;
+  map09 `map08.boss_defeated → birth`. All nine links verified by the checker.
   `progression.model` is `illustrative_linear` on every map — see the Open item below.
 - **Obstacles:** ≥2 positive, in-bounds solid slabs per map; hazard zones are `planned`.
 - **Upgrades:** `permanent` and `additive`, each with `softlock_fallback`;
@@ -66,7 +67,9 @@ an observed automated PASS with its human feel check open
 - **Resources:** `single_nutrition` with `meter_count: 1`; M4 energy is modeled as
   `ability_pools: ["energy"]` on maps 03/04/08, not as a new economy meter.
 - **Engine honesty:** whitelist ids only; stage 03 is the only stage whose upgrade
-  and boss code both exist. No owner acceptance is implied.
+  and boss code both exist; stage 09 has an implemented boss (`the_convergence` →
+  FinalBoss) with a planned upgrade, so its `stage_status` is `partial`. No owner
+  acceptance is implied.
 
 ## Open / Risk — recorded deviations, not silently fixed
 
@@ -85,8 +88,9 @@ an observed automated PASS with its human feel check open
 
 | Command | Observed result |
 |---|---|
-| `pwsh -NoProfile -File tools/check_maps.ps1` | `MAP CHECK PASSED - 8 maps, 533 checks`, exit 0 |
-| 9 negative fixtures | all exit 1 with named failures |
+| `pwsh -NoProfile -File tools/check_maps.ps1` | `MAP CHECK PASSED - 9 maps, 614 checks`, exit 0 |
+| 9 negative fixtures | all exit 1 with named failures (recorded on the eight-map set) |
+| map09 runtime-copy drift control | exit 1 with `[map09.json] runtime map copy drifted from canonical`; restored copy re-passes |
 | `pwsh -File harness/scripts/check.ps1` | `HARNESS CHECK PASSED: 65 checks`, exit 0 |
 | `git status` | no `game/` changes |
 

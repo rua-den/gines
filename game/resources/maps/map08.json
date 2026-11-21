@@ -103,7 +103,7 @@
   "progression": {
     "model": "illustrative_linear",
     "entry_requires": "map07.boss_defeated",
-    "exit_unlocks": "birth"
+    "exit_unlocks": "map09"
   },
   "stage_status": "planned",
   "status": "Proposed"

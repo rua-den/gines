@@ -302,21 +302,35 @@ a planned gate built as an inert slab. This is a signpost toward birth, not a
 milestone PASS or approved art — the birth cinematic remains **Open** (no birth
 sequence is implemented).
 
+`res://scenes/map09.tscn` ("The Convergence") is the runnable **ante-birth final
+boss stage**: its boss `the_convergence` is implemented and resolves to the new
+`FinalBoss` (a two-phase BloomBoss subclass — 12 HP, the learned 0.6 / 1.5 rhythm
+in phase 1, then a `second_wind` at 6 HP with 0.45 / 1.1 timings and a readable
+`phase_changed` marker). Its `final_form` upgrade is planned-only and its
+`integrated_form` grant loads as an explicitly acknowledged placeholder (fallback:
+the existing spike burst); no combo input, new resource or birth cinematic is
+invented. map08 now unlocks map09, and map09's exit signposts birth while the
+cinematic itself stays **Open**. No milestone PASS, owner feel check or approved
+art is implied.
+
 ```powershell
 # Play map01 from the JSON-driven runner
 & $godot --path game res://scenes/map_runner.tscn
 
-# Play any full stage (02-08): feed -> evolve -> gate -> boss -> completion
+# Play any full stage (02-09): feed -> evolve -> gate -> boss -> completion
 & $godot --path game res://scenes/map03.tscn
 & $godot --path game res://scenes/map08.tscn
+& $godot --path game res://scenes/map09.tscn
 
 # Headless: each map has its own full-map rule test
 & $godot --headless --audio-driver Dummy --path game --script res://tests/map_runner_check.gd
 & $godot --headless --audio-driver Dummy --path game --script res://tests/map03_check.gd
 & $godot --headless --audio-driver Dummy --path game --script res://tests/map08_check.gd
+& $godot --headless --audio-driver Dummy --path game --script res://tests/map09_check.gd
 
 # Headless autopilot for a stage (passes even without a display)
 & $godot --headless --audio-driver Dummy --path game res://scenes/map08.tscn -- --map-demo=map08
+& $godot --headless --audio-driver Dummy --path game res://scenes/map09.tscn -- --map-demo=map09
 
 # All maps, drift guards, and every registered check
 pwsh -File tools/check_maps.ps1
