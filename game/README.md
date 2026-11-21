@@ -246,13 +246,14 @@ godot --path game res://scenes/test_scene.tscn --resolution 1280x720 -- --screen
 ### Map runner (`res://scenes/map_runner.tscn`)
 
 `res://scenes/map_runner.tscn` loads `res://resources/maps/map01.json`, a
-generated runtime copy of the canonical `docs/maps/map01.json`. **map01 is the
-only playable map.** Maps 02–08 remain **design-only**: their JSON describes
-planned stages and is validated by `tools/check_maps.ps1`, but no runtime scene
-loads them. The planned boss `the_drifter` currently spawns a `Predator`, which
-is a **Proposed** placeholder for `the_drifter` (not an approved enemy or final
-art) following the map data's `fallback_until_implemented` field. This is a
-runtime prototype, not a milestone PASS, and implies no art approval.
+generated runtime copy of the canonical `docs/maps/map01.json`. The planned boss
+`the_drifter` currently spawns a `Predator`, a **Proposed** placeholder following
+the map data's `fallback_until_implemented` field. Maps 02–08 use the
+parameterized `map_stage.gd` scenes listed below, each with a full-map test.
+Every runtime map copy is byte-identical to its canonical file and guarded by a
+SHA256 check in `tools/check_maps.ps1`. These are runtime prototypes with
+placeholder abilities, bosses and endings — not a milestone PASS, and no art
+approval is implied.
 
 `res://scenes/map02.tscn` ("The Divide") is also runnable through the same
 parameterized stage: its planned boss `the_splitter` uses the documented
@@ -301,9 +302,21 @@ sequence is implemented).
 # Play map01 from the JSON-driven runner
 & $godot --path game res://scenes/map_runner.tscn
 
-# Headless: map data contract and map runner rules
+# Play any full stage (02-08): feed -> evolve -> gate -> boss -> completion
+& $godot --path game res://scenes/map03.tscn
+& $godot --path game res://scenes/map08.tscn
+
+# Headless: each map has its own full-map rule test
 & $godot --headless --audio-driver Dummy --path game --script res://tests/map_runner_check.gd
+& $godot --headless --audio-driver Dummy --path game --script res://tests/map03_check.gd
+& $godot --headless --audio-driver Dummy --path game --script res://tests/map08_check.gd
+
+# Headless autopilot for a stage (passes even without a display)
+& $godot --headless --audio-driver Dummy --path game res://scenes/map08.tscn -- --map-demo=map08
+
+# All maps, drift guards, and every registered check
 pwsh -File tools/check_maps.ps1
+pwsh -File tools/verify.ps1 -Godot $godot
 ```
 
 ## Layout
