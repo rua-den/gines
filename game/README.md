@@ -265,6 +265,14 @@ as a clearly labeled BloomBoss **Proposed placeholder** (design-only, not an
 approved enemy or art), the hazard band is an inert slab because timed damage is
 still Open, and no milestone PASS is implied.
 
+`res://scenes/map05.tscn` ("The Calcium Vault") is runnable: its upgrade is
+entirely planned, so `body_contraction` and `dash` load only as explicitly
+acknowledged **planned-grant placeholders** (fallback: swim/grip/burst) — they
+are not implemented abilities; its planned boss `the_vine_lash` has no
+`built_from` and uses the labeled BloomBoss **Proposed placeholder**, the hazard
+is an inert slab because contact damage is still Open, and no milestone PASS or
+art approval is implied.
+
 ```powershell
 # Play map01 from the JSON-driven runner
 & $godot --path game res://scenes/map_runner.tscn

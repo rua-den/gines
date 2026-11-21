@@ -20,19 +20,31 @@ const MAP_DIR := "res://resources/maps/"
 const PLAYER_SCENE := "res://scenes/player.tscn"
 ## Capability whitelists: declarations of what this build can execute, not
 ## per-map requirements. Adding an id here is an honest feature flag.
-const SUPPORTED_MAP_IDS := ["map03", "map02", "map04"]
-## map04's planned `the_pulse_maw` is deliberately NOT whitelisted: it has no
-## built_from, so its documented Rot Bloom fallback resolves to the labeled
-## BloomBoss placeholder (Proposed, design-only) via _boss_kind()/_spawn_bloom().
+const SUPPORTED_MAP_IDS := ["map03", "map02", "map04", "map05"]
+## map04's planned `the_pulse_maw` and map05's planned `the_vine_lash` are
+## deliberately NOT whitelisted: neither has a built_from, so their documented
+## Rot Bloom fallbacks resolve to the labeled BloomBoss placeholder (Proposed,
+## design-only) via _boss_kind()/_spawn_bloom().
 const SUPPORTED_BOSS_IDS := ["rot_bloom"]
 const SUPPORTED_BUILT_FROM := "Predator"
 const SUPPORTED_OBSTACLE_KINDS := ["static_slab", "gate", "hazard_zone"]
-## Implemented upgrade grants (schema v1 whitelist).
+## Implemented upgrade grants (schema v1 whitelist). Adding an id here is an
+## honest claim that executable code exists; it is NOT a per-map requirement.
 const SUPPORTED_GRANTS := ["surface_grip", "crawl", "absorption_channel",
 	"spike_ring", "spike_burst", "energy_pool",
 	# map02's absorption_channel also grants the single nutrition resource,
 	# which is implemented by Absorbable + PlayerController.nutrition.
 	"nutrition"]
+## Known UNIMPLEMENTED grant ids. This is a second, lower tier: a grant here is
+## NOT a capability claim. It is accepted only when ALL of these hold:
+##   - the thin scene lists the id in acknowledged_planned_grants,
+##   - the JSON says upgrade.engine_status == "planned", AND
+##   - upgrade.fallback_until_implemented is a non-empty string.
+## Otherwise it is a named `placeholder`/`unsupported` failure and the map is
+## rejected before anything is built. Maps 06-08 reuse this same mechanism.
+const PLANNED_GRANTS := ["body_contraction", "dash", "run", "jump",
+	"body_part_strike", "double_jump", "glide", "chemical_veil",
+	"integrated_form", "combo_mastery"]
 ## Allow-list of known SCHEMA.md v1 keys. A future key must be added here
 ## deliberately; any other key is a named `unsupported` failure, never skipped.
 const KNOWN_KEYS := [
@@ -80,8 +92,17 @@ const HUD_GOLD := Color(0.95, 0.76, 0.31)
 @export var boss_pos: Vector2 = Vector2(1560.0, 520.0)
 @export var default_checkpoint: Vector2 = Vector2(1020.0, 900.0)
 @export var complete_text: String = "MAP03 COMPLETE — the golden alcove has changed you"
+## Planned grant ids this thin scene explicitly acknowledges. A scene must list
+## an id here (and satisfy the other two planned-tier checks) before a
+## PLANNED_GRANTS id is accepted; an omission is a named failure, never silent.
+@export var acknowledged_planned_grants: Array[String] = []
 
 var map_data: Dictionary = {}
+## Grants accepted through the planned tier on the last successful load. Kept
+## separate from SUPPORTED_GRANTS so the HUD/log/verdict can be honest about
+## which abilities are real and which are fallback placeholders.
+var placeholder_grants: Array[String] = []
+var planned_fallback_label: Label = null
 var slabs: Array[StaticBody2D] = []
 var player: PlayerController = null
 var motes: Array[Absorbable] = []
@@ -136,7 +157,10 @@ func is_demo_arg(arg: String) -> bool:
 
 
 func result_line(passed: bool) -> String:
-	return "%s RESULT: %s" % [map_id.to_upper(), "PASS" if passed else "FAIL"]
+	# A PASS on a planned-grant map is explicitly a placeholder result; never
+	# report it as a fully implemented/approved milestone.
+	var tail := " (placeholder)" if passed and not placeholder_grants.is_empty() else ""
+	return "%s RESULT: %s%s" % [map_id.to_upper(), "PASS" if passed else "FAIL", tail]
 
 
 func _ready() -> void:
@@ -231,10 +255,37 @@ func _facts_for(data: Dictionary) -> Dictionary:
 	for g in (upgrade.get("grants", []) as Array):
 		grants.append(str(g))
 	facts["upgrade_grants"] = grants
+	facts["upgrade_engine_status"] = str(upgrade.get("engine_status", ""))
+	facts["upgrade_fallback_until_implemented"] = str(upgrade.get("fallback_until_implemented", ""))
+	facts["acknowledged_planned_grants"] = acknowledged_planned_grants
 	var unknown_keys: Array[String] = []
 	_collect_unknown_keys(data, unknown_keys)
 	facts["unknown_keys"] = unknown_keys
 	return facts
+
+
+## Pure two-tier grant classifier. Splits a grant list into implemented,
+## accepted-planned (placeholder) and rejected ids. Shared by the gate and the
+## headless test so both assert the exact same rule.
+func classify_grants(grants: Array, engine_status: String, fallback: String,
+		acknowledged: Array) -> Dictionary:
+	var implemented: Array[String] = []
+	var placeholder: Array[String] = []
+	var rejected: Array[String] = []
+	for g in grants:
+		var id := str(g)
+		if SUPPORTED_GRANTS.has(id):
+			implemented.append(id)
+		elif PLANNED_GRANTS.has(id) and acknowledged.has(id) \
+				and engine_status == "planned" and not fallback.is_empty():
+			placeholder.append(id)
+		else:
+			rejected.append(id)
+	return {
+		"implemented": implemented,
+		"placeholder": placeholder,
+		"rejected": rejected,
+	}
 
 
 ## Pure rule evaluator: one named failure per broken rule, empty = safe to run.
@@ -264,9 +315,22 @@ func evaluate_map_stage(facts: Dictionary) -> Array[String]:
 			if not SUPPORTED_OBSTACLE_KINDS.has(str(kind)):
 				failures.append("unsupported: obstacle kind '%s' has no builder" % str(kind))
 	if facts.has("upgrade_grants"):
-		for grant in (facts["upgrade_grants"] as Array):
-			if not SUPPORTED_GRANTS.has(str(grant)):
-				failures.append("unsupported: upgrade grant '%s' has no implementation" % str(grant))
+		var grants: Array = facts["upgrade_grants"]
+		var engine_status := str(facts.get("upgrade_engine_status", ""))
+		var fallback := str(facts.get("upgrade_fallback_until_implemented", ""))
+		var acknowledged: Array = facts.get("acknowledged_planned_grants", [])
+		for grant in grants:
+			var id := str(grant)
+			if SUPPORTED_GRANTS.has(id):
+				continue # implemented tier: code exists
+			if not PLANNED_GRANTS.has(id):
+				failures.append("unsupported: upgrade grant '%s' is in neither implemented nor planned set" % id)
+			elif acknowledged.has(id) and engine_status == "planned" and not fallback.is_empty():
+				continue # planned tier: acknowledged + planned + documented fallback
+			else:
+				# A known planned id with a broken/missing precondition is a
+				# distinct, named failure so the bad fixture fails for a reason.
+				failures.append("placeholder: planned grant '%s' needs engine_status=planned, scene acknowledgment and a non-empty fallback" % id)
 	# Progression safety: the motes must be able to pay for evolution.
 	if facts.has("mote_nutrition") and facts.has("evolve_cost") \
 			and float(facts["mote_nutrition"]) < float(facts["evolve_cost"]):
@@ -323,12 +387,22 @@ func _within(rect: Rect2, point: Vector2) -> bool:
 ## Gate + build in one place. On any named failure the map is rejected and no
 ## entity is touched, so an invalid candidate cannot half-build a scene.
 func load_map_data(data: Dictionary) -> Array[String]:
-	var failures := evaluate_map_stage(_facts_for(data))
+	var facts := _facts_for(data)
+	var failures := evaluate_map_stage(facts)
 	if not failures.is_empty():
 		load_failures = failures
 		return failures
 	load_failures = []
 	map_data = data
+	# Record which grants came from the planned tier BEFORE building anything.
+	var classified := classify_grants(facts["upgrade_grants"],
+		str(facts["upgrade_engine_status"]),
+		str(facts["upgrade_fallback_until_implemented"]),
+		facts["acknowledged_planned_grants"])
+	placeholder_grants = classified["placeholder"]
+	if not placeholder_grants.is_empty():
+		# Honest log line: these are fallbacks, never "implemented".
+		print(log_prefix(), " PLANNED FALLBACK: ", ", ".join(placeholder_grants))
 	var room: Dictionary = data.get("room", {})
 	room_rect = Rect2(0.0, 0.0, float(room.get("width", 1920)),
 		float(room.get("height", 1080)))
@@ -369,6 +443,7 @@ func _clear_built() -> void:
 	camera = null
 	hud = null
 	hud_status = null
+	planned_fallback_label = null
 	completion_marker = null
 	boss_defeated = false
 	boss_fallback_label = ""
@@ -550,6 +625,14 @@ func _build_hud() -> void:
 	hint.offset_top = 72.0
 	hint.offset_bottom = 96.0
 	layer.add_child(hint)
+	if not placeholder_grants.is_empty():
+		# Honest HUD marker: planned abilities are explicit fallbacks, not
+		# implemented features. Present only on maps that use the planned tier.
+		planned_fallback_label = _make_label(
+			"PLANNED FALLBACK: " + ", ".join(placeholder_grants), 13, HUD_GOLD)
+		planned_fallback_label.offset_top = 98.0
+		planned_fallback_label.offset_bottom = 122.0
+		layer.add_child(planned_fallback_label)
 
 
 func _update_hud() -> void:

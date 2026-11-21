@@ -86,4 +86,4 @@ Implemented ids today (the checker's whitelist; code exists, not owner-accepted)
 - obstacle kinds: `static_slab`, `gate`
 
 Everything else is `planned` and must state `fallback_until_implemented`.
-Run `pwsh -File tools/check_maps.ps1` to enforce this contract.
+Grants have two tiers: `SUPPORTED_GRANTS` = executable code exists; `PLANNED_GRANTS` = known unimplemented ids accepted at runtime only when the scene acknowledges them and the JSON states `planned` with a non-empty `fallback_until_implemented` (Proposed placeholders, not capability claims). Run `pwsh -File tools/check_maps.ps1` to enforce this contract.
