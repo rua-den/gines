@@ -1,0 +1,111 @@
+{
+  "artifact_type": "design_only",
+  "schema_version": 1,
+  "id": "map06",
+  "stage": 6,
+  "name": "The Budding Field",
+  "developmental_beat": "Limb buds: the body grows parts with a direction and a purpose.",
+  "plan_refs": [
+    "GAME_DESIGN_FOUNDATION.md §7 (later: run, jump, body-part weapons)",
+    "DEVELOPMENT_PLAN.md §8 (new parts affect combat, traversal or interaction)"
+  ],
+  "room": {
+    "width": 1920,
+    "height": 1080,
+    "coordinate_space": "design_only"
+  },
+  "obstacles": [
+    {
+      "id": "field_floor",
+      "kind": "static_slab",
+      "rect": [0, 980, 1920, 100],
+      "role": "floor — run and crawl surface",
+      "engine_status": "implemented"
+    },
+    {
+      "id": "field_ceiling",
+      "kind": "static_slab",
+      "rect": [0, 0, 1920, 60],
+      "role": "ceiling",
+      "engine_status": "implemented"
+    },
+    {
+      "id": "bud_platform_low",
+      "kind": "static_slab",
+      "rect": [520, 780, 300, 40],
+      "role": "first platform across a floor gap",
+      "engine_status": "implemented"
+    },
+    {
+      "id": "bud_platform_high",
+      "kind": "static_slab",
+      "rect": [1080, 620, 300, 40],
+      "role": "second platform reached by jumping",
+      "engine_status": "implemented"
+    },
+    {
+      "id": "bud_wall",
+      "kind": "static_slab",
+      "rect": [1560, 300, 70, 680],
+      "role": "vertical wall requiring grip or a jump route",
+      "engine_status": "implemented"
+    }
+  ],
+  "upgrade": {
+    "id": "run_jump",
+    "grants": ["run", "jump", "body_part_strike"],
+    "name": "Limbs — run, jump and a directional strike",
+    "plan_ref": "GAME_DESIGN_FOUNDATION.md §7 later game; §8 body-part weapons",
+    "permanent": true,
+    "additive": true,
+    "capacity": { "equipped_limit": null, "status": "Open" },
+    "engine_status": "planned",
+    "softlock_fallback": "Swim, crawl, grip and the spike burst remain available; no boss requires the strike.",
+    "fallback_until_implemented": "Use swim and spike burst until run, jump and the strike are built.",
+    "note": "One new offensive part, not a branch choice; earlier body parts are retained."
+  },
+  "boss": {
+    "id": "the_gnawer",
+    "name": "The Gnawer",
+    "kind": "hostile_organism",
+    "engine_status": "planned",
+    "loop": "Burrows toward the player, surfaces to bite, then exposes its soft underside.",
+    "weak_window": "1.3 s while the underside is exposed after a bite.",
+    "gate_requires": ["spike_ring"],
+    "retry_rule": "shelter",
+    "softlock_fallback": "The armoured front is optional to break: the existing spike burst reaches the exposed underside too.",
+    "fallback_until_implemented": "Use the Rot Bloom weak-window loop with a bur approaching animation.",
+    "solution": "Strike the underside with the new part, or spend burst energy for the same damage."
+  },
+  "deferred_world_fields": {
+    "visual_identity": { "value": null, "status": "Open" },
+    "secrets": { "entries": [], "status": "Open" },
+    "return_signals": { "entries": [], "status": "Open" },
+    "narrative_discoveries": { "entries": [], "status": "Open" }
+  },
+  "checkpoint": {
+    "kind": "shelter",
+    "position": [300, 520]
+  },
+  "resources": {
+    "model": "single_nutrition",
+    "meter_count": 1,
+    "sources": ["nutrient motes", "defeated organisms"],
+    "future_resource": {
+      "name": "protein",
+      "status": "Open",
+      "note": "Tissue flavour only; the single nutrition meter is unchanged."
+    }
+  },
+  "narrative": {
+    "mother_role": "absent",
+    "beat": "The body stops being formless: it gains a front, a back and a direction."
+  },
+  "progression": {
+    "model": "illustrative_linear",
+    "entry_requires": "map05.boss_defeated",
+    "exit_unlocks": "map07"
+  },
+  "stage_status": "planned",
+  "status": "Proposed"
+}

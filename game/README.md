@@ -273,6 +273,13 @@ are not implemented abilities; its planned boss `the_vine_lash` has no
 is an inert slab because contact damage is still Open, and no milestone PASS or
 art approval is implied.
 
+`res://scenes/map06.tscn` ("The Budding Field") is runnable: its `run`, `jump` and
+`body_part_strike` grants are planned-only and load just as explicitly
+acknowledged **planned-grant placeholders** (fallback: swim/grip/burst) — not
+implemented abilities; its planned boss `the_gnawer` has no `built_from` and uses
+the labeled BloomBoss **Proposed placeholder**, and no milestone PASS or art
+approval is implied.
+
 ```powershell
 # Play map01 from the JSON-driven runner
 & $godot --path game res://scenes/map_runner.tscn
