@@ -39,7 +39,7 @@ const KNOWN_KEYS := [
 	"width", "height", "coordinate_space", "kind", "rect", "role",
 	"engine_status", "fallback_until_implemented",
 	# upgrade / boss
-	"grants", "plan_ref", "permanent", "additive", "capacity",
+	"grants", "plan_ref", "permanent", "additive", "capacity", "note",
 	"softlock_fallback", "equipped_limit", "loop", "weak_window",
 	"gate_requires", "retry_rule", "built_from", "solution",
 	# resources / narrative / progression

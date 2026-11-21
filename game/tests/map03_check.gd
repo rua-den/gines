@@ -13,7 +13,7 @@ extends SceneTree
 ##     --script res://tests/map03_check.gd
 ## Exit code 0 = all cases pass, 1 = at least one failure.
 
-const EXPECTED_CASES := 15
+const EXPECTED_CASES := 16
 const MAP_RES := "res://resources/maps/map03.json"
 const STAGE_SCENE := "res://scenes/map03.tscn"
 const EXPECTED_ID := "map03"
@@ -491,6 +491,25 @@ func _case_unknown_json_key_rejected() -> void:
 		"reported=%s restored=%s" % [reported, real])
 
 
+func _case_note_annotation_is_accepted() -> void:
+	if _stage == null:
+		_check("SCHEMA note annotation is accepted, unknown key still rejected", false, "<no stage>")
+		return
+	var with_note := _json.duplicate(true)
+	with_note["upgrade"]["note"] = "annotation: flavour only, not a resource"
+	var reported: Array = _stage.call("load_map_data", with_note)
+	var unknown_still_rejected := false
+	var bad := with_note.duplicate(true)
+	bad["truly_unknown_key"] = {"status": "Open"}
+	for f in _stage.call("load_map_data", bad):
+		if str(f).begins_with("unsupported") and str(f).find("truly_unknown_key") != -1:
+			unknown_still_rejected = true
+	var real: Array = _stage.call("load_map_data", _json)
+	var ok: bool = reported.is_empty() and unknown_still_rejected and real.is_empty()
+	_check("SCHEMA note annotation is accepted, unknown key still rejected", ok,
+		"note_reported=%s unknown_rejected=%s restored=%s" % [reported, unknown_still_rejected, real])
+
+
 func _case_same_frame_rebuild_has_no_duplicates() -> void:
 	if _stage == null:
 		_check("same-frame rebuild leaves no duplicate actors", false, "<no stage>")
@@ -542,6 +561,7 @@ func _init() -> void:
 	await _case_runtime_copy_drift()
 	await _case_demo_flag_derived_from_map_id()
 	await _case_unknown_json_key_rejected()
+	await _case_note_annotation_is_accepted()
 	await _case_same_frame_rebuild_has_no_duplicates()
 	if _stage != null and is_instance_valid(_stage):
 		_stage.queue_free()

@@ -58,6 +58,9 @@ an ability-cost pool (`docs/MILESTONES.md` Milestone 4) and appears as
 `ability_pools: ["energy"]` on the maps that rely on it. Creating a second
 economy meter remains **Open** under `DEVELOPMENT_PLAN.md §4`.
 `future_resource` is either `null` or an object with `name` and `status: "Open"`.
+`note` is an optional free-form design annotation on `upgrade`, `boss` or
+`future_resource`. It is non-executable and ignored by runtime; it is never a
+resource or progress field. The runtime allow-list accepts it by name.
 
 `deferred_world_fields` holds `visual_identity`, `secrets`, `return_signals`
 and `narrative_discoveries` as empty stubs with `status: "Open"`.
