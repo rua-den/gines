@@ -216,7 +216,20 @@ func _case_completion() -> void:
 	var marker_before: bool = _slice.has_node("RegionCompleteLabel")
 	if arena != null:
 		arena.set("boss_defeated", true)
-		await _frames(3)
+		# Completion is detected in RegionSlice._process(), not _physics_process().
+		# Drive it directly instead of racing physics frames.
+		_slice.call("_process", 0.016)
+		var settled := false
+		for _i in 12:
+			if bool(_slice.get("completion_reported")):
+				settled = true
+				break
+			_slice.call("_process", 0.016)
+			await _frames(1)
+		if not settled:
+			_check("completion marker waits for defeat and fires once", false,
+				"completion never reported after defeat")
+			return
 	var reported: bool = bool(_slice.get("completion_reported"))
 	var marker_count := 0
 	for child in _slice.get_children():

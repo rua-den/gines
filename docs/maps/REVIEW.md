@@ -18,8 +18,10 @@ exit=0
 
 (The runner renders the em dash in the script's output string as a hyphen.)
 
-Negative controls — full eight-map copies with one field broken each. All
-returned exit 1 with the named failure:
+Negative controls are retained as `tools/check_maps_negative.ps1`. It copies
+the canonical maps to a temp directory, breaks exactly one rule per fixture,
+runs `tools/check_maps.ps1` and asserts the named failure and exit 1. Observed:
+`MAP NEGATIVE PASSED — 9 fixtures failed as named`, exit 0. All nine fixtures:
 
 | Fixture | Broken field | Observed first failure |
 |---|---|---|
@@ -89,7 +91,7 @@ an observed automated PASS with its human feel check open
 | Command | Observed result |
 |---|---|
 | `pwsh -NoProfile -File tools/check_maps.ps1` | `MAP CHECK PASSED - 9 maps, 614 checks`, exit 0 |
-| 9 negative fixtures | all exit 1 with named failures (recorded on the eight-map set) |
+| `pwsh -NoProfile -File tools/check_maps_negative.ps1` | `MAP NEGATIVE PASSED — 9 fixtures failed as named`, exit 0 (retained, reproducible) |
 | map09 runtime-copy drift control | exit 1 with `[map09.json] runtime map copy drifted from canonical`; restored copy re-passes |
 | `pwsh -File harness/scripts/check.ps1` | `HARNESS CHECK PASSED: 65 checks`, exit 0 |
 | `git status` | clean; map runtime scenes/scripts are committed implementation, not milestone decisions |
