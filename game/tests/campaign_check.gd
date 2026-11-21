@@ -11,7 +11,7 @@ extends SceneTree
 ##     --script res://tests/campaign_check.gd
 ## Exit code 0 = all cases pass, 1 = at least one failure.
 
-const EXPECTED_CASES := 9
+const EXPECTED_CASES := 10
 const CAMPAIGN_SCENE := "res://scenes/campaign.tscn"
 const MENU_SCENE := "res://scenes/main_menu.tscn"
 
@@ -191,6 +191,26 @@ func _case_stage_complete_overlay() -> void:
 	c2.free()
 
 
+func _case_pause_freezes_campaign_timer() -> void:
+	if not _guard("pause freezes the campaign timer"):
+		return
+	var c2 := _make_campaign()
+	await _frames(1)
+	_force_clear(c2)
+	_pump(c2, 1)
+	# This test script itself extends SceneTree.
+	var paused: SceneTree = self
+	paused.paused = true
+	_pump(c2, 12, 0.2)
+	var held: bool = int(c2.get("stage_index")) == 0 and not bool(c2.get("finished"))
+	paused.paused = false
+	_pump(c2, 5, 0.2)
+	var resumed: bool = int(c2.get("stage_index")) == 1
+	_check("pause freezes the campaign timer", held and resumed,
+		"held=%s resumed=%s stage_index=%d" % [held, resumed, int(c2.get("stage_index"))])
+	c2.free()
+
+
 func _case_all_nine_advance() -> void:
 	if not _guard("all nine stages advance to the ending"):
 		return
@@ -292,6 +312,7 @@ func _init() -> void:
 	await _case_initial_stage()
 	await _case_forcing_defeat_advances()
 	await _case_stage_complete_overlay()
+	await _case_pause_freezes_campaign_timer()
 	await _case_all_nine_advance()
 	await _case_ending_only_after_map09()
 	await _case_interact_returns_to_menu()

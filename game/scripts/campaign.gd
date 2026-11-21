@@ -156,6 +156,10 @@ func _stage_defeated(stage: Node) -> bool:
 
 
 func _process(delta: float) -> void:
+	# A stage's pause overlay must freeze the campaign timer too; this root may
+	# inherit PROCESS_MODE_ALWAYS while the tree is paused.
+	if get_tree() != null and get_tree().paused:
+		return
 	if finished:
 		return
 	if current_stage == null or not is_instance_valid(current_stage):
