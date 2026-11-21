@@ -1,0 +1,13 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/map_stage.gd" id="1_stage"]
+
+[node name="MapStage" type="Node2D"]
+script = ExtResource("1_stage")
+map_id = "map08"
+acknowledged_planned_grants = Array[String](["integrated_form", "combo_mastery"])
+mote_positions = Array[Vector2]([Vector2(200, 650), Vector2(380, 650), Vector2(560, 650)])
+zone_pos = Vector2(1000, 650)
+boss_pos = Vector2(1840, 650)
+default_checkpoint = Vector2(300, 520)
+complete_text = "MAP08 COMPLETE — the path opens toward birth (finale placeholder; birth cinematic is Open)"

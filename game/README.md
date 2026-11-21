@@ -288,6 +288,15 @@ uses the labeled BloomBoss **Proposed placeholder**, the sensor tripwire band is
 an inert slab because tracking damage is still Open, and no milestone PASS or
 art approval is implied.
 
+`res://scenes/map08.tscn` ("The Passage") is the runnable **finale placeholder**:
+its `integrated_form` and `combo_mastery` grants are planned-only and load just
+as explicitly acknowledged placeholders (fallback: swim/grip/burst), not
+implemented abilities or combo inputs; its planned boss `the_last_overgrowth`
+uses the labeled BloomBoss **Proposed placeholder** and its `final_membrane` is
+a planned gate built as an inert slab. This is a signpost toward birth, not a
+milestone PASS or approved art — the birth cinematic remains **Open** (no birth
+sequence is implemented).
+
 ```powershell
 # Play map01 from the JSON-driven runner
 & $godot --path game res://scenes/map_runner.tscn
