@@ -16,6 +16,12 @@ const PLAYER_SCENE := "res://scenes/player.tscn"
 const EXPECTED_MAP_ID := "map01"
 const SUPPORTED_BUILT_FROM := "Predator"
 const SUPPORTED_OBSTACLE_KINDS := ["static_slab"]
+## Implemented upgrade grants (schema v1 whitelist).
+const SUPPORTED_GRANTS := ["surface_grip", "crawl", "absorption_channel",
+	"spike_ring", "spike_burst", "energy_pool"]
+## Keys that only future maps introduce. Never silently skipped.
+const FUTURE_ID_KEYS := ["hazard", "hazards", "hazard_zone", "hazard_zones",
+	"combo", "combos", "dash", "glide", "double_jump"]
 const ENEMY_START := Vector2(1180.0, 560.0)
 const ENEMY_PATROL := 200.0
 const BOUNDS_MARGIN := 60.0
@@ -31,6 +37,9 @@ var room_rect: Rect2 = Rect2(0.0, 0.0, 1920.0, 1080.0)
 var load_failures: Array[String] = []
 var _min_pos := Vector2.INF
 var _max_pos := Vector2(-INF, -INF)
+## Positions observed BEFORE the safety clamp — keeps the bounds rule honest.
+var _raw_min := Vector2.INF
+var _raw_max := Vector2(-INF, -INF)
 
 
 func _ready() -> void:
@@ -70,6 +79,25 @@ func _facts_for(data: Dictionary) -> Dictionary:
 		if o is Dictionary:
 			kinds.append(str((o as Dictionary).get("kind", "")))
 	facts["obstacle_kinds"] = kinds
+	var upgrade: Dictionary = data.get("upgrade", {})
+	var grants: Array[String] = []
+	var grant_values: Array = upgrade.get("grants", [])
+	for g in grant_values:
+		grants.append(str(g))
+	facts["upgrade_grants"] = grants
+	# Scan the map, its upgrade/boss blocks and every obstacle for keys that
+	# belong to unimplemented future abilities (dash, glide, hazard, combos).
+	var sources: Array = [data, upgrade, boss]
+	for o in obstacles:
+		if o is Dictionary:
+			sources.append(o)
+	var future_ids: Array[String] = []
+	for source in sources:
+		var src: Dictionary = source
+		for key in FUTURE_ID_KEYS:
+			if src.has(key) and not future_ids.has(key):
+				future_ids.append(key)
+	facts["future_ids"] = future_ids
 	return facts
 
 
@@ -93,6 +121,15 @@ func evaluate_map_run(facts: Dictionary) -> Array[String]:
 		for kind in kinds:
 			if not SUPPORTED_OBSTACLE_KINDS.has(str(kind)):
 				failures.append("unsupported: obstacle kind '%s' has no builder" % str(kind))
+	if facts.has("upgrade_grants"):
+		var grants: Array = facts["upgrade_grants"]
+		for g in grants:
+			if not SUPPORTED_GRANTS.has(str(g)):
+				failures.append("unsupported: upgrade grant '%s' has no implementation" % str(g))
+	if facts.has("future_ids"):
+		var ids: Array = facts["future_ids"]
+		for id in ids:
+			failures.append("unsupported: future id '%s' is not implemented" % str(id))
 	if facts.has("runtime_hash") and facts.has("canonical_hash") \
 			and str(facts["runtime_hash"]) != str(facts["canonical_hash"]):
 		failures.append("drift: runtime map copy differs from the canonical map")
@@ -124,6 +161,8 @@ func load_map_data(data: Dictionary) -> Array[String]:
 		float((data.get("room", {}) as Dictionary).get("height", 1080)))
 	_min_pos = Vector2.INF
 	_max_pos = Vector2(-INF, -INF)
+	_raw_min = Vector2.INF
+	_raw_max = Vector2(-INF, -INF)
 	_build_all(data)
 	return failures
 
@@ -246,9 +285,12 @@ func _build_hud() -> void:
 func _process(_delta: float) -> void:
 	if player == null or not is_instance_valid(player):
 		return
+	var raw := player.global_position
+	_raw_min = _raw_min.min(raw)
+	_raw_max = _raw_max.max(raw)
 	var lo := room_rect.position + Vector2(BOUNDS_MARGIN, BOUNDS_MARGIN)
 	var hi := room_rect.end - Vector2(BOUNDS_MARGIN, BOUNDS_MARGIN)
-	player.global_position = player.global_position.clamp(lo, hi)
+	player.global_position = raw.clamp(lo, hi)
 	_min_pos = _min_pos.min(player.global_position)
 	_max_pos = _max_pos.max(player.global_position)
 	if camera != null and is_instance_valid(camera):

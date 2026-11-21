@@ -13,7 +13,7 @@ extends SceneTree
 ##     --script res://tests/map_runner_check.gd
 ## Exit code 0 = all cases pass, 1 = at least one failure.
 
-const EXPECTED_CASES := 8
+const EXPECTED_CASES := 9
 const MAP_RES := "res://resources/maps/map01.json"
 const RUNNER_SCENE := "res://scenes/map_runner.tscn"
 
@@ -134,6 +134,11 @@ func _room_rect(data: Dictionary) -> Rect2:
 
 func _enemy() -> Node:
 	return _runner.get("enemy") if _runner != null else null
+
+
+func _within(rect: Rect2, point: Vector2) -> bool:
+	return point.x >= rect.position.x and point.y >= rect.position.y \
+		and point.x <= rect.end.x and point.y <= rect.end.y
 
 
 # ------------------------------------------------------------------- cases
@@ -260,20 +265,58 @@ func _case_player_in_bounds() -> void:
 		await _frames(12)
 	p.set("demo_dir", Vector2.ZERO)
 	await _frames(2)
+	# Force a real excursion OUTSIDE the room, then let one frame run. The
+	# runner records raw (pre-clamp) and clamped (post-clamp) extremes; only the
+	# raw pair may violate the room. Breaking the clamp leaves the final body
+	# outside, so this case fails instead of silently passing.
+	var room := _room_rect(_json)
+	(p as Node2D).global_position = room.position + Vector2(-200.0, -200.0)
+	await _frames(1)
+	var raw_min: Vector2 = _runner.get("_raw_min")
+	var raw_max: Vector2 = _runner.get("_raw_max")
 	var mn: Vector2 = _runner.get("_min_pos")
 	var mx: Vector2 = _runner.get("_max_pos")
-	var room := _room_rect(_json)
-	var real_fail := _failures({"min_pos": mn, "max_pos": mx, "room_rect": room})
+	var final_pos: Vector2 = (p as Node2D).global_position
+	var excursion: bool = not _within(room, raw_min) or not _within(room, raw_max)
+	var clamped_back: bool = _within(room, final_pos)
+	var raw_fail := _failures({"min_pos": raw_min, "max_pos": raw_max, "room_rect": room})
+	var clamped_fail := _failures({"min_pos": mn, "max_pos": mx, "room_rect": room})
 	var violating := _failures({
 		"min_pos": room.position - Vector2(50, 50),
 		"max_pos": room.end + Vector2(50, 50),
 		"room_rect": room,
 	})
-	var tracked: bool = mn != Vector2.INF and mx != Vector2(-INF, -INF)
-	var ok: bool = tracked and real_fail.is_empty() and _has(violating, "bounds")
+	var tracked: bool = raw_min != Vector2.INF and raw_max != Vector2(-INF, -INF) \
+		and mn != Vector2.INF and mx != Vector2(-INF, -INF)
+	var ok: bool = tracked and excursion and clamped_back \
+		and _has(raw_fail, "bounds") and clamped_fail.is_empty() \
+		and _has(violating, "bounds")
 	_check("player stays inside room bounds", ok,
-		"min=%s max=%s room=%s real=%s violating=%s" % [
-			mn, mx, room, real_fail, violating])
+		"raw=%s..%s final=%s clamped=%s..%s excursion=%s clamped_back=%s raw_fail=%s clamped_fail=%s violating=%s" % [
+			raw_min, raw_max, final_pos, mn, mx, excursion, clamped_back,
+			raw_fail, clamped_fail, violating])
+
+
+func _case_future_ids_rejected() -> void:
+	var bad := _json.duplicate(true)
+	var upgrade: Dictionary = (bad.get("upgrade", {}) as Dictionary).duplicate(true)
+	upgrade["grants"] = ["surface_grip", "dash"]
+	bad["upgrade"] = upgrade
+	bad["hazards"] = [{"id": "acid_pool", "kind": "hazard_zone"}]
+	var original := _enemy()
+	var reported: Array = _call_runner("load_map_data", bad)
+	var rule := _failures({
+		"upgrade_grants": ["dash"],
+		"future_ids": ["hazards"],
+	})
+	var grant_named := _has(reported, "unsupported") and _has(rule, "unsupported")
+	var still_same: bool = original != null and original == _enemy() and original is Predator
+	# Real map01 has only implemented grants and no future-id keys: no false positive.
+	var real_fail: Array = _call_runner("load_map_data", _json)
+	var ok: bool = grant_named and still_same and real_fail.is_empty()
+	_check("future grants and hazard ids are rejected", ok,
+		"reported=%s rule=%s real=%s enemy_unchanged=%s" % [
+			reported, rule, real_fail, still_same])
 
 
 # ------------------------------------------------------------------- entry
@@ -291,6 +334,7 @@ func _init() -> void:
 	await _case_unsupported_map_id()
 	await _case_runtime_copy_drift()
 	await _case_player_in_bounds()
+	await _case_future_ids_rejected()
 	if _runner != null and is_instance_valid(_runner):
 		_runner.queue_free()
 	await _frames(2)
