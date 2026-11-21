@@ -2,15 +2,18 @@ extends SceneTree
 ## Headless rule check for the additive region slice (prototype -> boss arena).
 ##
 ## The slice exposes a pure evaluate_slice_run(facts) so every progression rule
-## is pinned by a named case without a window. Cases 1/4/5/8 also read the real
-## instanced scene so a broken integration cannot pass on rules alone.
+## is pinned by a named case without a window. Several cases also read the real
+## instanced scene so a broken integration cannot pass on rules alone. Each
+## burst case feeds a VIOLATING fact (so it fails if the rule is deleted) and
+## drives a real burst against the instanced boss (so it fails if the boss does
+## not actually gate damage by phase).
 ##
 ## Run:
 ##   godot --headless --audio-driver Dummy --path game \
 ##     --script res://tests/region_slice_check.gd
 ## Exit code 0 = all cases pass, 1 = at least one failure.
 
-const EXPECTED_CASES := 9
+const EXPECTED_CASES := 10
 
 var _passed := 0
 var _failed := 0
@@ -66,6 +69,18 @@ func _count_current_cameras(root: Node) -> int:
 	return count
 
 
+## Put the instanced arena player in burst range of its boss with a ready body.
+func _prepare_burst(boss: Node) -> Node:
+	var arena: Node = _slice.get("arena")
+	var p: Node = arena.get("player")
+	p.set("evolved", true)
+	p.set("dead", false)
+	p.set("energy", PlayerController.MAX_ENERGY)
+	p.set("_burst_cooldown", 0.0)
+	p.global_position = boss.global_position + Vector2(-90.0, 0.0)
+	return p
+
+
 # ------------------------------------------------------------------- cases
 
 func _case_fresh_run() -> void:
@@ -95,6 +110,20 @@ func _case_evolved_boundary() -> void:
 	var failures := _failures(_slice, {"at_boundary": true, "evolved": true})
 	var ok: bool = not _has_rule(failures, "transition")
 	_check("evolved at the boundary transitions", ok, "failures=%s" % [failures])
+
+
+## LIVE softlock guard: a real unevolved body at the boundary must not hand off.
+func _case_unevolved_boundary_live() -> void:
+	var prelude: Node = _slice.get("prelude")
+	var p: Node = prelude.get("player")
+	p.set("evolved", false)
+	p.global_position = Vector2(1880.0, 500.0)
+	_slice.call("_process", 0.016)
+	var state_after = _slice.get("state")
+	var arena_after = _slice.get("arena")
+	var ok: bool = state_after == "PRELUDE" and arena_after == null
+	_check("live unevolved player at boundary does not transition", ok,
+		"state=%s arena=%s" % [state_after, arena_after])
 
 
 func _drive_transition() -> void:
@@ -143,15 +172,43 @@ func _case_gate_handoff() -> void:
 
 
 func _case_burst_outside() -> void:
-	var failures := _failures(_slice, {"outside_damage": 0})
-	var ok: bool = not _has_rule(failures, "burst-outside")
-	_check("burst outside the weak window deals no boss damage", ok, "failures=%s" % [failures])
+	# Violating fact: the rule must fire, so deleting the rule fails this case.
+	var rule_failures := _failures(_slice, {"outside_damage": 1})
+	var rule_ok: bool = _has_rule(rule_failures, "burst-outside")
+	# Real behavior: a burst outside the weak window must leave boss health alone.
+	var arena: Node = _slice.get("arena")
+	var boss: Node = arena.get("boss") if arena != null else null
+	var dealt := -1
+	var fired := false
+	if boss != null:
+		var p := _prepare_burst(boss)
+		boss.set("phase", "telegraph")
+		var before: int = int(boss.get("health"))
+		fired = bool(p.call("spike_burst"))
+		dealt = before - int(boss.get("health"))
+	var ok: bool = rule_ok and fired and dealt == 0
+	_check("burst outside the weak window deals no boss damage", ok,
+		"rule_fires=%s fired=%s dealt=%d failures=%s" % [rule_ok, fired, dealt, rule_failures])
 
 
 func _case_burst_inside() -> void:
-	var failures := _failures(_slice, {"inside_damage": 1})
-	var ok: bool = not _has_rule(failures, "burst-inside")
-	_check("burst inside the weak window deals exactly one", ok, "failures=%s" % [failures])
+	# Violating fact: the rule must fire, so deleting the rule fails this case.
+	var rule_failures := _failures(_slice, {"inside_damage": 0})
+	var rule_ok: bool = _has_rule(rule_failures, "burst-inside")
+	# Real behavior: a burst inside the weak window must subtract exactly one.
+	var arena: Node = _slice.get("arena")
+	var boss: Node = arena.get("boss") if arena != null else null
+	var dealt := -1
+	var fired := false
+	if boss != null:
+		var p := _prepare_burst(boss)
+		boss.set("phase", "exposed")
+		var before: int = int(boss.get("health"))
+		fired = bool(p.call("spike_burst"))
+		dealt = before - int(boss.get("health"))
+	var ok: bool = rule_ok and fired and dealt == 1
+	_check("burst inside the weak window deals exactly one", ok,
+		"rule_fires=%s fired=%s dealt=%d failures=%s" % [rule_ok, fired, dealt, rule_failures])
 
 
 func _case_completion() -> void:
@@ -205,6 +262,7 @@ func _init() -> void:
 	_slice = _make_slice()
 	await _frames(3)
 	await _case_fresh_run()
+	await _case_unevolved_boundary_live()
 	await _drive_transition()
 	await _case_unevolved_boundary()
 	await _case_evolved_boundary()
