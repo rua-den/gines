@@ -525,10 +525,12 @@ func _build_background() -> void:
 	base.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	layer.add_child(base)
 	# Three sparse radial glows. Low opacity keeps gameplay reading first.
+	# CanvasLayer children live in the 960x540 viewport space, not the 1920x1080
+	# room space used by slabs — keep every blob inside the visible canvas.
 	var blobs: Array = [
-		[Vector2(420, 320), 2.4, Color(tint.r, tint.g, tint.b, 0.42)],
-		[Vector2(1250, 260), 2.0, Color(tint.r * 0.7, minf(tint.g * 1.15, 1.0), tint.b, 0.32)],
-		[Vector2(1650, 760), 2.2, Color(minf(tint.r * 1.2, 1.0), tint.g * 0.6, tint.b, 0.28)],
+		[Vector2(240, 210), 1.9, Color(tint.r, tint.g, tint.b, 0.42)],
+		[Vector2(700, 150), 1.5, Color(tint.r * 0.7, minf(tint.g * 1.15, 1.0), tint.b, 0.32)],
+		[Vector2(800, 400), 1.6, Color(minf(tint.r * 1.2, 1.0), tint.g * 0.6, tint.b, 0.28)],
 	]
 	for def in blobs:
 		var blob := Sprite2D.new()
@@ -546,8 +548,8 @@ func _build_background() -> void:
 		[0.5, Color(tint.r, tint.g, tint.b, 0.16)],
 		[1.0, Color(tint.r, tint.g, tint.b, 0.0)],
 	], false)
-	band.position = Vector2(960, 540)
-	band.scale = Vector2(14.0, 0.7)
+	band.position = Vector2(480, 270)
+	band.scale = Vector2(7.0, 0.5)
 	layer.add_child(band)
 
 

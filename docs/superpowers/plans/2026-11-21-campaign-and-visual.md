@@ -14,7 +14,7 @@
 
 - Godot console: `D:\stu\gd\clone-game\tools\godot\Godot_v4.7.2-stable_win64_console.exe`; repo root; args before `--`.
 - Task 1 new: `game/scenes/map01.tscn`, `game/tests/map01_check.gd` (+ .uid). Modify `game/scripts/map_stage.gd` (map01 whitelist + background), `game/tests/map03_check.gd` (background case), `tools/verify.ps1` (3 lines), `game/scripts/main_menu.gd` (map01 path), `game/tests/menu_check.gd` (map01 path).
-- Task 2 new: `game/scenes/campaign.tscn`, `game/scripts/campaign.gd`, `game/tests/campaign_check.gd` (+ .uid). Modify `main_menu.gd` (Campaign entry), `menu_check.gd`, `tools/verify.ps1` (3 lines), README/BACKLOG/game README.
+- Task 2 new: `game/scenes/campaign.tscn`, `game/scripts/campaign.gd`, `game/tests/campaign_check.gd` (+ .uid). Modify `main_menu.gd` (Campaign entry), `menu_check.gd`, `game/scripts/map_stage.gd` (pause overlay), `game/tests/map03_check.gd` (pause cases), `tools/verify.ps1` (3 lines), README/BACKLOG/game README.
 - Must not touch: canonical `docs/maps/*`, milestone decisions, input map, save format, existing map02..09 scenes or tests.
 - No new art/audio/font; procedural only. No birth cinematic.
 
@@ -40,9 +40,10 @@
 
 - [ ] Step 1 RED: write `campaign_check.gd` with cases: initial stage map01 ready; forcing `boss_defeated` advances to next stage; all nine advance to ending; ending appears only after map09; interactive back to menu; named negative fixture (unknown stage path / premature ending) fails.
 - [ ] Step 2: implement campaign scene/script with `MAP_PATHS` for map01..map09, overlay labels, direct `_process()` polling (no physics-frame race), pure `evaluate_campaign(facts)`, `[CAMPAIGN] READY` log.
-- [ ] Step 3: add Campaign entry to Main menu (6 entries) and update `menu_check.gd`; add 3 verifier lines.
-- [ ] Step 4: verify campaign check ALL PASS, smoke, menu check ALL PASS, all map checks, verifier 53 full / 41 skip, checker 614, harness 65.
-- [ ] Step 5: commit `feat(campaign): add sequential nine-map campaign mode`.
+- [ ] Step 3: add Campaign entry to Main menu (5 entries) and update `menu_check.gd`; add 3 verifier lines.
+- [ ] Step 4: add the per-stage pause overlay to `MapStage` (Resume / Restart / Map Select / Main Menu) with pause-state test cases in `map03_check.gd`; keep its EXPECTED_CASES accurate.
+- [ ] Step 5: verify campaign check ALL PASS, smoke, menu check ALL PASS, all map checks (incl. new pause cases), verifier 53 full / 41 skip, checker 614, harness 65.
+- [ ] Step 6: commit `feat(campaign): add sequential campaign and per-stage pause menu`.
 
 ## Verification summary
 

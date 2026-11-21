@@ -51,7 +51,20 @@ introduced. A headless test drives each stage by setting `boss_defeated` and
 asserts advancement through all nine plus a negative fixture.
 
 Menu: add **Campaign** to Main (New Game / Continue / Campaign / Map Select /
-Quit). Map Select still lists all nine maps.
+Quit), taking Main from 4 to 5 entries. Map Select still lists all nine maps.
+
+### Per-stage pause menu
+
+The owner also reported there is no way to go back from a stage. `MapStage`
+gains a pause overlay shown with `pause` (`Esc/P`): **Resume**, **Restart**,
+**Map Select**, **Main Menu**. `move_up/down` selects, `interact` activates,
+`pause`/`attack` resumes. Restart reloads the current map from its JSON;
+Map Select and Main Menu request the corresponding main-menu panel. The
+overlay must pause gameplay while open and never destroy the player's saved
+progress. It is tested by a dedicated case in `map03_check.gd` (shared code):
+open on `pause`, Resume closes it, Restart rebuilds one player/camera, and the
+two navigation requests produce the correct targets. This is a Proposed
+quality-of-life feature, not an approved UI art direction.
 
 ### map01 beatable
 
@@ -106,6 +119,8 @@ completed: skip it in the campaign test and report, never force progression.
 - [ ] Menu has a Campaign entry; `menu_check.gd` updated and ALL PASS.
 - [ ] `campaign_check.gd` drives all nine stages to completion with a named
       negative fixture; `campaign.tscn` smoke prints `[CAMPAIGN] READY`.
+- [ ] Per-stage pause overlay in `MapStage` tested via `map03_check.gd`: opens,
+      resumes, restarts with one player/camera, and requests Map Select / Main.
 - [ ] Background nodes asserted in at least one map test.
 - [ ] Verifier full 53 / skip 41; checker 614; harness 65; all earlier tests green.
 - [ ] No milestone PASS, no approved art, no birth cinematic.
