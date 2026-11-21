@@ -343,8 +343,8 @@ Screenshots are committed under `creative/muse/outputs/experiments/`:
   captures `approach`, `telegraph`, `weak-window`, `victory`. `-SkipDemo`
   produces `VERIFY PASSED: 15 checks` and correctly skips all four demos.
   Those counts are **historical for the M5 commit**; later additions (region
-  slice, map runner, maps 02–09, menu) expanded the same verifier to 47 checks
-  full / 35 with `-SkipDemo`. Current totals are recorded in
+  slice, map runner, maps 01–09, menu, campaign and pause overlays) expanded the
+  same verifier to 53 checks full / 41 with `-SkipDemo`. Current totals are recorded in
   [`README.md`](../README.md) and `docs/BACKLOG.md`.
 - **Known limitations (not failures):** procedural gradient visual and no audio
   assets; the autopilot proves the fight is possible, not that it is fun;
