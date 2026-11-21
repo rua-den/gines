@@ -73,6 +73,7 @@ try {
     Invoke-Check "M1 smoke: movement scene loads" @("--headless", "--audio-driver", "Dummy", "--path", "game", "res://scenes/movement_test.tscn", "--quit-after", "5") '\[M1\] READY' | Out-Null
     Invoke-Check "M2 smoke: prototype scene loads" @("--headless", "--audio-driver", "Dummy", "--path", "game", "res://scenes/prototype.tscn", "--quit-after", "5") '\[M2\] READY' | Out-Null
     Invoke-Check "M5 smoke: boss arena loads" @("--headless", "--audio-driver", "Dummy", "--path", "game", "res://scenes/boss_test.tscn", "--quit-after", "5", "--", "--fresh-save") '\[M5\] READY' | Out-Null
+    Invoke-Check "map03 smoke: stage scene loads" @("--headless", "--audio-driver", "Dummy", "--path", "game", "res://scenes/map03.tscn", "--quit-after", "5") '\[MAP03\] READY map03' | Out-Null
     Invoke-Check "regression: grip detach contract" @("--headless", "--audio-driver", "Dummy", "--path", "game", "--script", "res://tests/grip_detach_check.gd") 'ALL PASS' | Out-Null
     Invoke-Check "regression: demo verdict can fail" @("--headless", "--audio-driver", "Dummy", "--path", "game", "--script", "res://tests/demo_verdict_check.gd") 'ALL PASS' | Out-Null
     Invoke-Check "regression: absorption contract" @("--headless", "--audio-driver", "Dummy", "--path", "game", "--script", "res://tests/absorption_check.gd") 'ALL PASS' | Out-Null
@@ -85,6 +86,7 @@ try {
     Invoke-Check "regression: M5 demo verdict can fail" @("--headless", "--audio-driver", "Dummy", "--path", "game", "--script", "res://tests/m5_verdict_check.gd") 'ALL PASS' | Out-Null
     Invoke-Check "regression: region slice rules" @("--headless", "--audio-driver", "Dummy", "--path", "game", "--script", "res://tests/region_slice_check.gd") 'ALL PASS' | Out-Null
     Invoke-Check "regression: map runner rules" @("--headless", "--audio-driver", "Dummy", "--path", "game", "--script", "res://tests/map_runner_check.gd") 'ALL PASS' | Out-Null
+    Invoke-Check "regression: map03 stage rules" @("--headless", "--audio-driver", "Dummy", "--path", "game", "--script", "res://tests/map03_check.gd") 'ALL PASS' | Out-Null
 
     if ($SkipDemo) {
         Write-Host "[SKIP] M1 demo autopilot (-SkipDemo)"
@@ -105,6 +107,8 @@ try {
         Invoke-Check "M2 demo autopilot (absorb/hit/retry)" @("--audio-driver", "Dummy", "--path", "game", "res://scenes/prototype.tscn", "--", "--m2-demo", "--outdir=$outPath") 'DEMO RESULT: PASS' | Out-Null
         Invoke-Check "M3 demo autopilot (feed/evolve/kill)" @("--audio-driver", "Dummy", "--path", "game", "res://scenes/prototype.tscn", "--", "--m3-demo", "--outdir=$outPath") 'DEMO RESULT: PASS' | Out-Null
         Invoke-Check "M5 demo autopilot (evolve/telegraph/weak-window/victory)" @("--audio-driver", "Dummy", "--path", "game", "res://scenes/boss_test.tscn", "--", "--m5-demo", "--outdir=$outPath", "--fresh-save") 'DEMO RESULT: PASS' | Out-Null
+        # Headless by design: this autopilot reports failures by name, never captures screenshots.
+        Invoke-Check "map03 demo autopilot (feed/evolve/gate/boss/completion)" @("--headless", "--audio-driver", "Dummy", "--path", "game", "res://scenes/map03.tscn", "--", "--map03-demo") 'MAP03 RESULT: PASS' | Out-Null
     }
 }
 finally {
