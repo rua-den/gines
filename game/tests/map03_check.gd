@@ -13,7 +13,7 @@ extends SceneTree
 ##     --script res://tests/map03_check.gd
 ## Exit code 0 = all cases pass, 1 = at least one failure.
 
-const EXPECTED_CASES := 18
+const EXPECTED_CASES := 23
 const MAP_RES := "res://resources/maps/map03.json"
 const STAGE_SCENE := "res://scenes/map03.tscn"
 const EXPECTED_ID := "map03"
@@ -596,6 +596,132 @@ func _case_background_is_procedural() -> void:
 			"layer=-2" if layer != null else "<none>", base_count, gradient_count, hud_layer_ok])
 
 
+# ------------------------------------------------------------- pause cases
+
+const PAUSE_LABELS: Array[String] = ["Resume", "Restart", "Map Select", "Main Menu"]
+
+
+func _case_pause_opens() -> void:
+	if _stage == null:
+		_check("pause opens the four-entry overlay", false, "<no stage>")
+		return
+	_stage.call("on_pause")
+	await _frames(1)
+	var layer := _stage.get("pause_layer") as CanvasLayer
+	var labels: Array = _stage.get("pause_labels")
+	var labels_ok: bool = labels.size() == PAUSE_LABELS.size()
+	if labels_ok:
+		for i in PAUSE_LABELS.size():
+			if not str(labels[i].text).contains(PAUSE_LABELS[i]):
+				labels_ok = false
+	var ok: bool = bool(_stage.get("paused")) and layer != null and layer.visible \
+		and labels_ok and self.paused
+	_check("pause opens the four-entry overlay", ok,
+		"paused=%s layer=%s labels=%s tree_paused=%s" % [
+			bool(_stage.get("paused")), layer != null, labels_ok, self.paused])
+
+
+func _case_resume_closes() -> void:
+	if _stage == null:
+		_check("Resume closes the overlay and unpauses", false, "<no stage>")
+		return
+	_stage.call("on_resume")
+	await _frames(1)
+	var layer := _stage.get("pause_layer") as CanvasLayer
+	var ok: bool = not bool(_stage.get("paused")) and layer != null \
+		and not layer.visible and not self.paused
+	_check("Resume closes the overlay and unpauses", ok,
+		"paused=%s layer_visible=%s tree_paused=%s" % [
+			bool(_stage.get("paused")), layer.visible if layer != null else "?",
+			self.paused])
+
+
+func _case_pause_restart() -> void:
+	if _stage == null:
+		_check("Restart rebuilds one player/camera/HUD", false, "<no stage>")
+		return
+	_stage.call("on_pause")
+	var old_p: Node = _stage.get("player")
+	var old_boss: Node = _stage.get("boss")
+	old_p.set("nutrition", 7.0)
+	(old_p as Node2D).global_position = Vector2(400.0, 400.0)
+	if old_boss != null:
+		old_boss.set("health", 1)
+	_stage.set("pause_selection", 1) # Restart
+	_stage.call("on_pause_interact")
+	await _frames(2)
+	var players := 0
+	var cameras := 0
+	var huds := 0
+	for child in _stage.get_children():
+		if child is PlayerController:
+			players += 1
+		elif child is Camera2D:
+			cameras += 1
+		elif child is CanvasLayer:
+			huds += 1
+	var p: Node = _stage.get("player")
+	var boss: Node = _stage.get("boss")
+	var reset_ok: bool = p != null and boss != null \
+		and is_equal_approx(float(p.get("nutrition")), 0.0) \
+		and is_equal_approx((p as Node2D).global_position.x, 1020.0) \
+		and int(boss.get("health")) == BloomBoss.MAX_HEALTH
+	var ok: bool = players == 1 and cameras == 1 and huds == 1 and reset_ok \
+		and not bool(_stage.get("paused")) and not self.paused
+	_check("Restart rebuilds one player/camera/HUD", ok,
+		"players=%d cameras=%d huds=%d reset=%s paused=%s" % [
+			players, cameras, huds, reset_ok, bool(_stage.get("paused"))])
+
+
+func _case_pause_navigation_requests() -> void:
+	if _stage == null:
+		_check("pause navigation requests exact scene paths", false, "<no stage>")
+		return
+	_stage.set("change_scene_on_request", false)
+	_stage.call("on_pause")
+	_stage.set("pause_selection", 2) # Map Select
+	_stage.call("on_pause_interact")
+	var map_request := str(_stage.get("last_scene_request"))
+	_stage.call("on_pause")
+	_stage.set("pause_selection", 3) # Main Menu
+	_stage.call("on_pause_interact")
+	var menu_request := str(_stage.get("last_scene_request"))
+	var ok: bool = map_request == "res://scenes/map_select.tscn" \
+		and menu_request == "res://scenes/main_menu.tscn" and not self.paused
+	_check("pause navigation requests exact scene paths", ok,
+		"map=%s menu=%s tree_paused=%s" % [map_request, menu_request, self.paused])
+
+
+func _case_gameplay_frozen_while_paused() -> void:
+	if _stage == null:
+		_check("gameplay is frozen while paused", false, "<no stage>")
+		return
+	_stage.call("on_pause")
+	var p: Node = _stage.get("player")
+	var boss: Node = _stage.get("boss")
+	p.set("energy", 0.5)
+	p.set("demo_active", true)
+	p.set("demo_dir", Vector2.RIGHT)
+	var p0: Vector2 = (p as Node2D).global_position
+	var b0: Vector2 = (boss as Node2D).global_position
+	var e0 := float(p.get("energy"))
+	await _frames(8)
+	var p1: Vector2 = (p as Node2D).global_position
+	var b1: Vector2 = (boss as Node2D).global_position
+	var e1 := float(p.get("energy"))
+	# MapStage._process() (camera follow / bounds clamp / demo autopilot) must
+	# also be gated while the overlay is open.
+	_stage.call("_process", 0.1)
+	var p2: Vector2 = (p as Node2D).global_position
+	var ok: bool = p1.distance_to(p0) < EPS and b1.distance_to(b0) < EPS \
+		and is_equal_approx(e1, e0) and p2.distance_to(p0) < EPS
+	p.set("demo_dir", Vector2.ZERO)
+	_stage.call("on_resume")
+	_check("gameplay is frozen while paused", ok,
+		"player_move=%.3f boss_move=%.3f energy %.2f->%.2f after_process=%.3f" % [
+			p1.distance_to(p0), b1.distance_to(b0), e0, e1, p2.distance_to(p0)])
+
+
 # ------------------------------------------------------------------- entry
 
 func _init() -> void:
@@ -621,6 +747,11 @@ func _init() -> void:
 	await _case_note_annotation_is_accepted()
 	await _case_same_frame_rebuild_has_no_duplicates()
 	await _case_background_is_procedural()
+	await _case_pause_opens()
+	await _case_resume_closes()
+	await _case_pause_restart()
+	await _case_pause_navigation_requests()
+	await _case_gameplay_frozen_while_paused()
 	if _stage != null and is_instance_valid(_stage):
 		_stage.queue_free()
 	await _frames(2)

@@ -10,6 +10,16 @@ direction, and its Map Select labels mark unimplemented stages honestly. Its
 headless check is `res://tests/menu_check.gd`. Milestone decisions and evidence
 are recorded in [`../docs/MILESTONES.md`](../docs/MILESTONES.md).
 
+**Campaign and per-stage pause (Proposed, 2026-11-21):** the Main panel has a
+Campaign entry (`res://scenes/campaign.tscn`) that instances map01..map09 one at
+a time and advances on each boss defeat; the headless check is
+`res://tests/campaign_check.gd`. Each `MapStage` opens a pause overlay with
+Esc/P (Resume / Restart / Map Select / Main Menu); `res://scenes/map_select.tscn`
+opens Map Select directly, and the pause cases live in `tests/map03_check.gd`.
+Both features are Proposed quality-of-life work with procedural UI — no
+approved art direction, no milestone PASS, no cross-map save format and no
+birth cinematic (map09 only signposts the route toward birth).
+
 ## Required version
 
 - **Godot 4.7.2 stable** (`4.7.2.stable.official.ed1daf0bf`).
@@ -100,6 +110,10 @@ godot --headless --audio-driver Dummy --path game \
   --script res://tests/energy_check.gd
 godot --headless --audio-driver Dummy --path game \
   --script res://tests/m3_verdict_check.gd
+godot --headless --audio-driver Dummy --path game \
+  --script res://tests/menu_check.gd
+godot --headless --audio-driver Dummy --path game \
+  --script res://tests/campaign_check.gd
 ```
 
 ### Windows (PowerShell)
@@ -331,6 +345,10 @@ art is implied.
 # Headless autopilot for a stage (passes even without a display)
 & $godot --headless --audio-driver Dummy --path game res://scenes/map08.tscn -- --map-demo=map08
 & $godot --headless --audio-driver Dummy --path game res://scenes/map09.tscn -- --map-demo=map09
+
+# Sequential campaign: smoke and headless autopilot (map01 -> map09 -> signpost)
+& $godot --headless --audio-driver Dummy --path game res://scenes/campaign.tscn --quit-after 5
+& $godot --headless --audio-driver Dummy --path game res://scenes/campaign.tscn -- --campaign-demo
 
 # All maps, drift guards, and every registered check
 pwsh -File tools/check_maps.ps1

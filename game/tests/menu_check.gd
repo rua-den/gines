@@ -16,8 +16,10 @@ extends SceneTree
 ##     --script res://tests/menu_check.gd
 ## Exit code 0 = all cases pass, 1 = at least one failure.
 
-const EXPECTED_CASES := 12
+const EXPECTED_CASES := 14
 
+# New Game / Continue / Campaign / Map Select / Quit = 5 entries.
+const EXPECTED_MAIN_COUNT := 5
 # Region Slice + map01..map09 = 10 entries.
 const EXPECTED_MAP_COUNT := 10
 
@@ -208,7 +210,7 @@ func _case_selecting_entry_requests_scene() -> void:
 	var menu := _make_menu()
 	await _frames(2)
 	menu.on_interact() # MAIN
-	menu.selection = 2 # Map Select
+	menu.selection = 3 # Map Select
 	menu.on_interact()
 	menu.selection = 0
 	menu.on_interact()
@@ -227,16 +229,57 @@ func _case_back_and_quit() -> void:
 	var menu := _make_menu()
 	await _frames(2)
 	menu.on_interact() # MAIN
-	menu.selection = 2 # Map Select
+	menu.selection = 3 # Map Select
 	menu.on_interact()
 	menu.on_back() # attack/pause returns to MAIN
 	var back_ok: bool = menu.panel == "MAIN"
-	menu.selection = 3 # Quit
+	menu.selection = 4 # Quit
 	menu.on_interact()
 	var ok: bool = back_ok and menu.quit_requested
 	_check("back returns to MAIN and Quit is callable", ok,
 		"panel_after_back=%s quit_requested=%s" % ["MAIN" if back_ok else menu.panel, menu.quit_requested])
 	await _dispose(menu)
+
+
+func _case_main_has_campaign_entry() -> void:
+	var menu := _make_menu()
+	await _frames(2)
+	var entries: Array = menu.MAIN_ENTRIES
+	var count_ok: bool = entries.size() == EXPECTED_MAIN_COUNT
+	var label_ok: bool = entries.size() > 2 and str(entries[2]) == "Campaign"
+	menu.on_interact() # MAIN
+	menu.selection = 2 # Campaign
+	menu.on_interact()
+	var path := str(menu.last_scene_request)
+	var route_ok: bool = path == "res://scenes/campaign.tscn" \
+		and ResourceLoader.exists(path)
+	var rule := menu.evaluate_menu({"path": path})
+	_check("Main has 5 entries and Campaign routes to the campaign", count_ok and label_ok \
+		and route_ok and rule.is_empty(),
+		"count=%d label=%s path=%s rule=%s" % [entries.size(), label_ok, path, rule])
+	await _dispose(menu)
+
+
+func _case_map_select_scene_opens_directly() -> void:
+	var packed: PackedScene = load("res://scenes/map_select.tscn")
+	if packed == null:
+		_check("map_select.tscn opens directly on MAP_SELECT", false, "<scene missing>")
+		return
+	var direct: MainMenu = packed.instantiate() as MainMenu
+	direct.change_scene_on_request = false
+	direct.quit_on_request = false
+	direct.save_path = SAVE_PATH
+	get_root().add_child(direct)
+	await _frames(2)
+	var initial_ok: bool = direct.initial_panel == "MAP_SELECT"
+	var panel_ok: bool = direct.panel == "MAP_SELECT"
+	var entries_ok: bool = direct.MAP_ENTRIES.size() == EXPECTED_MAP_COUNT
+	_check("map_select.tscn opens directly on MAP_SELECT", initial_ok and panel_ok and entries_ok,
+		"initial=%s panel=%s maps=%d" % [
+			direct.initial_panel, direct.panel, direct.MAP_ENTRIES.size()])
+	SaveState.clear(SAVE_PATH)
+	direct.free()
+	await _frames(2)
 
 
 func _case_negative_fixture() -> void:
@@ -266,6 +309,8 @@ func _init() -> void:
 	await _case_map_select_paths_correct()
 	await _case_selecting_entry_requests_scene()
 	await _case_back_and_quit()
+	await _case_main_has_campaign_entry()
+	await _case_map_select_scene_opens_directly()
 	await _case_negative_fixture()
 	if _passed + _failed != EXPECTED_CASES:
 		_failed += 1

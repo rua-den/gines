@@ -74,6 +74,12 @@ const MOTE_NUTRITION := 10.0
 const BOUNDS_MARGIN := 60.0
 const STANDOFF := 95.0
 const DEMO_TIMEOUT := 90.0
+## Per-stage pause menu. Resume / Restart / Map Select / Main Menu, drawn on a
+## dedicated layer so it reads above the HUD while gameplay is frozen.
+const PAUSE_ENTRIES: Array[String] = ["Resume", "Restart", "Map Select", "Main Menu"]
+const PAUSE_LAYER := 30
+const MAP_SELECT_PATH := "res://scenes/map_select.tscn"
+const MAIN_MENU_PATH := "res://scenes/main_menu.tscn"
 
 const GATE_FILL := Color(0.30, 0.08, 0.24, 0.92)
 const GATE_EDGE := Color(0.95, 0.45, 0.72)
@@ -81,6 +87,7 @@ const HAZARD_FILL := Color(0.28, 0.24, 0.10, 0.92)
 const HAZARD_EDGE := Color(0.95, 0.78, 0.31)
 const HUD_TEAL := Color(0.56, 0.96, 0.89)
 const HUD_GOLD := Color(0.95, 0.76, 0.31)
+const DIM := Color(0.78, 0.82, 0.80)
 ## Procedural background palette. A tint per map keeps regions from looking
 ## identical without any authored asset. Exploration only — no approved art.
 const BACKGROUND_BASE := Color(0.02, 0.05, 0.07)
@@ -130,6 +137,18 @@ var hud: CanvasLayer = null
 var hud_status: Label = null
 var completion_marker: Label = null
 var boss_defeated: bool = false
+## Mirror of the defeat marker used by the campaign's _process() poll.
+var completion_reported: bool = false
+## Pause overlay state. The scene root stays PROCESS_MODE_ALWAYS so the pause
+## key still reaches this script while the SceneTree is paused; every moving
+## child is explicitly PAUSABLE so gameplay really stops.
+var paused: bool = false
+var pause_selection: int = 0
+var pause_layer: CanvasLayer = null
+var pause_labels: Array[Label] = []
+## Test seams: real gameplay changes scenes; a headless check observes requests.
+var change_scene_on_request: bool = true
+var last_scene_request: String = ""
 ## One-line, honest label for a built_from fallback boss (never an approval).
 var boss_fallback_label: String = ""
 var load_failures: Array[String] = []
@@ -179,6 +198,10 @@ func result_line(passed: bool) -> String:
 
 
 func _ready() -> void:
+	# The root keeps processing while the SceneTree is paused so the pause key
+	# and menu navigation still work; moving children are PAUSABLE (below).
+	process_mode = Node.PROCESS_MODE_ALWAYS
+	_build_pause_overlay()
 	for arg in OS.get_cmdline_user_args():
 		if is_demo_arg(arg):
 			_demo = true
@@ -195,6 +218,144 @@ func _ready() -> void:
 	if _demo:
 		player.demo_active = true
 		print(log_prefix(), " demo autopilot enabled")
+
+
+# --------------------------------------------------------------- pause menu
+
+## The overlay is nested under a plain node so direct-child CanvasLayer counts
+## in the headless map checks still see exactly one HUD layer.
+func _build_pause_overlay() -> void:
+	var root := Node.new()
+	root.name = "PauseMenu"
+	add_child(root)
+	var layer := CanvasLayer.new()
+	layer.name = "PauseLayer"
+	layer.layer = PAUSE_LAYER
+	layer.process_mode = Node.PROCESS_MODE_ALWAYS
+	root.add_child(layer)
+	var panel := Panel.new()
+	panel.position = Vector2(300, 120)
+	panel.size = Vector2(360, 260)
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.025, 0.075, 0.09, 0.92)
+	style.border_color = HUD_GOLD
+	style.set_border_width_all(2)
+	style.set_corner_radius_all(12)
+	panel.add_theme_stylebox_override("panel", style)
+	layer.add_child(panel)
+	var heading := _make_label("PAUSED", 24, HUD_TEAL)
+	heading.offset_top = 12.0
+	heading.offset_bottom = 48.0
+	panel.add_child(heading)
+	for i in PAUSE_ENTRIES.size():
+		var row := _make_label(PAUSE_ENTRIES[i], 20, DIM)
+		row.offset_top = 58.0 + i * 36.0
+		row.offset_bottom = 90.0 + i * 36.0
+		panel.add_child(row)
+		pause_labels.append(row)
+	var hint := _make_label("W/S select  •  E activate  •  Esc / J resume", 13, DIM)
+	hint.offset_top = 206.0
+	hint.offset_bottom = 246.0
+	panel.add_child(hint)
+	pause_layer = layer
+	layer.visible = false
+
+
+func _refresh_pause() -> void:
+	for i in pause_labels.size():
+		var selected: bool = i == pause_selection
+		pause_labels[i].text = ("› " if selected else "  ") + PAUSE_ENTRIES[i]
+		pause_labels[i].add_theme_color_override("font_color",
+			HUD_GOLD if selected else DIM)
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("pause"):
+		if paused:
+			on_resume()
+		else:
+			on_pause()
+		return
+	if not paused:
+		return
+	if event.is_action_pressed("move_up"):
+		on_pause_move_up()
+	elif event.is_action_pressed("move_down"):
+		on_pause_move_down()
+	elif event.is_action_pressed("interact"):
+		on_pause_interact()
+	elif event.is_action_pressed("attack"):
+		on_resume()
+
+
+func on_pause() -> void:
+	if paused:
+		return
+	paused = true
+	pause_selection = 0
+	_refresh_pause()
+	if pause_layer != null:
+		pause_layer.visible = true
+	if get_tree() != null:
+		get_tree().paused = true
+
+
+func on_resume() -> void:
+	if not paused:
+		return
+	paused = false
+	if pause_layer != null:
+		pause_layer.visible = false
+	if get_tree() != null:
+		get_tree().paused = false
+
+
+func on_pause_move_up() -> void:
+	if not paused:
+		return
+	pause_selection = wrapi(pause_selection - 1, 0, PAUSE_ENTRIES.size())
+	_refresh_pause()
+
+
+func on_pause_move_down() -> void:
+	if not paused:
+		return
+	pause_selection = wrapi(pause_selection + 1, 0, PAUSE_ENTRIES.size())
+	_refresh_pause()
+
+
+func on_pause_interact() -> void:
+	if not paused:
+		return
+	if pause_selection < 0 or pause_selection >= PAUSE_ENTRIES.size():
+		return
+	match PAUSE_ENTRIES[pause_selection]:
+		"Resume":
+			on_resume()
+		"Restart":
+			restart()
+		"Map Select":
+			on_resume()
+			_request_scene(MAP_SELECT_PATH)
+		"Main Menu":
+			on_resume()
+			_request_scene(MAIN_MENU_PATH)
+
+
+## Restart reloads this map from its JSON. _clear_built() removes the old
+## player/camera/HUD before rebuilding, so exactly one of each remains.
+func restart() -> void:
+	on_resume()
+	load_map_data(_load_map())
+	print(log_prefix(), " restarted from JSON")
+
+
+func _request_scene(path: String) -> void:
+	last_scene_request = path
+	if get_tree() != null:
+		get_tree().paused = false
+		if change_scene_on_request:
+			get_tree().change_scene_to_file(path)
 
 
 func _load_map() -> Dictionary:
@@ -463,6 +624,7 @@ func _clear_built() -> void:
 	planned_fallback_label = null
 	completion_marker = null
 	boss_defeated = false
+	completion_reported = false
 	boss_fallback_label = ""
 	_bursts = 0
 	_demo_finished = false
@@ -634,6 +796,7 @@ func _build_boss(data: Dictionary) -> void:
 			# Proposed placeholder, never as an approved enemy.
 			var pred := Predator.new()
 			pred.name = "BuiltFromBoss"
+			pred.process_mode = Node.PROCESS_MODE_PAUSABLE
 			pred.position = boss_pos
 			pred.patrol_min_x = boss_pos.x - 120.0
 			pred.patrol_max_x = boss_pos.x + 120.0
@@ -688,6 +851,7 @@ func _spawn_final_boss(boss_id: String) -> void:
 
 func _build_camera() -> void:
 	camera = Camera2D.new()
+	camera.process_mode = Node.PROCESS_MODE_PAUSABLE
 	camera.name = "MapCamera"
 	camera.position_smoothing_enabled = true
 	camera.position_smoothing_speed = 5.0
@@ -813,6 +977,7 @@ func _on_boss_defeated() -> void:
 	if boss_defeated:
 		return
 	boss_defeated = true
+	completion_reported = true
 	if completion_marker == null:
 		completion_marker = _make_label(complete_text, 26, HUD_GOLD)
 		completion_marker.name = "CompletionMarker"
@@ -843,6 +1008,8 @@ func retry() -> void:
 
 
 func _process(delta: float) -> void:
+	if paused:
+		return
 	if player == null or not is_instance_valid(player):
 		return
 	var raw := player.global_position

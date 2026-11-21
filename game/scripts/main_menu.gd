@@ -19,7 +19,8 @@ const PANEL_MAIN := "MAIN"
 const PANEL_MAP_SELECT := "MAP_SELECT"
 const PANELS: Array[String] = [PANEL_TITLE, PANEL_MAIN, PANEL_MAP_SELECT]
 
-const MAIN_ENTRIES: Array[String] = ["New Game", "Continue", "Map Select", "Quit"]
+const MAIN_ENTRIES: Array[String] = ["New Game", "Continue", "Campaign", "Map Select", "Quit"]
+const CAMPAIGN_PATH := "res://scenes/campaign.tscn"
 
 ## Honest status markers: "code exists", "placeholder", "proposed placeholder".
 ## Never "Approved" or "final" — no art/design direction is approved here.
@@ -46,6 +47,10 @@ const TEAL_LIGHT := Color(0.56, 0.96, 0.89)
 const CORAL := Color(0.95, 0.48, 0.42)
 const DIM := Color(0.78, 0.82, 0.80)
 
+## Thin scenes (e.g. map_select.tscn) open a specific panel directly without
+## needing a command-line argument. Unknown values fall back to TITLE.
+@export var initial_panel: String = PANEL_TITLE
+
 # Public state (observed by the headless check).
 var panel: String = PANEL_TITLE
 var selection: int = 0
@@ -71,7 +76,7 @@ var _map_note: Label
 
 func _ready() -> void:
 	_build_ui()
-	_refresh()
+	_show(initial_panel)
 	print("[MENU] READY")
 
 
@@ -270,9 +275,11 @@ func _activate_main() -> void:
 				_refresh()
 			else:
 				_request_scene("res://scenes/region_slice.tscn")
-		2: # Map Select.
+		2: # Campaign — sequential map01..map09 run.
+			_request_scene(CAMPAIGN_PATH)
+		3: # Map Select.
 			_show(PANEL_MAP_SELECT)
-		3: # Quit.
+		4: # Quit.
 			quit_requested = true
 			if quit_on_request:
 				get_tree().quit()
@@ -336,4 +343,4 @@ func _is_known_path(path: String) -> bool:
 	for e in MAP_ENTRIES:
 		if str(e.get("path", "")) == path:
 			return true
-	return path == "res://scenes/region_slice.tscn"
+	return path == "res://scenes/region_slice.tscn" or path == CAMPAIGN_PATH

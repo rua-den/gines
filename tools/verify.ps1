@@ -83,6 +83,7 @@ try {
     Invoke-Check "map07 smoke: stage scene loads" @("--headless", "--audio-driver", "Dummy", "--path", "game", "res://scenes/map07.tscn", "--quit-after", "5") '\[MAP07\] READY map07' | Out-Null
     Invoke-Check "map08 smoke: stage scene loads" @("--headless", "--audio-driver", "Dummy", "--path", "game", "res://scenes/map08.tscn", "--quit-after", "5") '\[MAP08\] READY map08' | Out-Null
     Invoke-Check "map09 smoke: stage scene loads" @("--headless", "--audio-driver", "Dummy", "--path", "game", "res://scenes/map09.tscn", "--quit-after", "5") '\[MAP09\] READY map09' | Out-Null
+    Invoke-Check "campaign smoke: campaign scene loads" @("--headless", "--audio-driver", "Dummy", "--path", "game", "res://scenes/campaign.tscn", "--quit-after", "5") '\[CAMPAIGN\] READY' | Out-Null
     Invoke-Check "regression: grip detach contract" @("--headless", "--audio-driver", "Dummy", "--path", "game", "--script", "res://tests/grip_detach_check.gd") 'ALL PASS' | Out-Null
     Invoke-Check "regression: demo verdict can fail" @("--headless", "--audio-driver", "Dummy", "--path", "game", "--script", "res://tests/demo_verdict_check.gd") 'ALL PASS' | Out-Null
     Invoke-Check "regression: absorption contract" @("--headless", "--audio-driver", "Dummy", "--path", "game", "--script", "res://tests/absorption_check.gd") 'ALL PASS' | Out-Null
@@ -105,8 +106,10 @@ try {
     Invoke-Check "regression: map07 stage rules" @("--headless", "--audio-driver", "Dummy", "--path", "game", "--script", "res://tests/map07_check.gd") 'ALL PASS' | Out-Null
     Invoke-Check "regression: map08 stage rules" @("--headless", "--audio-driver", "Dummy", "--path", "game", "--script", "res://tests/map08_check.gd") 'ALL PASS' | Out-Null
     Invoke-Check "regression: map09 stage rules" @("--headless", "--audio-driver", "Dummy", "--path", "game", "--script", "res://tests/map09_check.gd") 'ALL PASS' | Out-Null
+    Invoke-Check "regression: campaign rules" @("--headless", "--audio-driver", "Dummy", "--path", "game", "--script", "res://tests/campaign_check.gd") 'ALL PASS' | Out-Null
 
     Invoke-Check "map01 demo autopilot (feed/evolve/slab/boss/completion)" @("--headless", "--audio-driver", "Dummy", "--path", "game", "res://scenes/map01.tscn", "--", "--map01-demo") 'MAP01 RESULT: PASS' | Out-Null
+    Invoke-Check "campaign autopilot (map01 -> map09 -> birth signpost)" @("--headless", "--audio-driver", "Dummy", "--path", "game", "res://scenes/campaign.tscn", "--", "--campaign-demo") 'CAMPAIGN RESULT: PASS' | Out-Null
 
     if ($SkipDemo) {
         Write-Host "[SKIP] M1 demo autopilot (-SkipDemo)"
