@@ -12,7 +12,7 @@ config_version=5
 
 config/name="GENESIS"
 config/description="A 2D action Metroidvania about the journey of a new life, from a single cell to birth."
-run/main_scene="res://scenes/test_scene.tscn"
+run/main_scene="res://scenes/main_menu.tscn"
 config/features=PackedStringArray("4.7", "GL Compatibility")
 config/icon="res://icon.svg"
 

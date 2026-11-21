@@ -3,9 +3,12 @@
 Milestone 0 setup + Milestone 1 player movement + Milestone 2 absorption and
 survival + Milestone 3 first evolution + Milestone 4 energy for the burst.
 Godot **4.7.2** (stable). The project
-opens and launches into the Milestone 0 test scene; play the prototype at
-`res://scenes/prototype.tscn`. Milestone decisions and evidence are recorded in
-[`../docs/MILESTONES.md`](../docs/MILESTONES.md).
+opens into a procedural main menu (`res://scenes/main_menu.tscn`): Title → Main
+→ Map Select → stage; play the prototype directly at
+`res://scenes/prototype.tscn`. The menu is procedural UI with no approved art
+direction, and its Map Select labels mark unimplemented stages honestly. Its
+headless check is `res://tests/menu_check.gd`. Milestone decisions and evidence
+are recorded in [`../docs/MILESTONES.md`](../docs/MILESTONES.md).
 
 ## Required version
 
@@ -40,7 +43,7 @@ From the repository root (replace `godot` with the path to the 4.7.2 binary):
 # Open in the editor
 godot --editor --path game
 
-# Play the main scene (the Milestone 0 test scene)
+# Play the default main scene (procedural main menu)
 godot --path game
 
 # Play the movement test room (Milestone 1): swim, crawl, grip
@@ -233,7 +236,8 @@ M5 smoke and demo; automated evidence was observed on 2026-11-21. The **owner
 feel check is still open** — see the checklist in
 [`../docs/MILESTONES.md`](../docs/MILESTONES.md). No milestone PASS is implied.
 
-The main scene is `res://scenes/test_scene.tscn`. It shows a scaling
+The default main scene is `res://scenes/main_menu.tscn`. The M0 scene
+`res://scenes/test_scene.tscn` shows a scaling
 marker layout and a live input readout. Pressing `Esc`/`P` toggles a
 PAUSED label. In screenshot mode it feeds two real key events (D, E)
 through the input system so the readout proves the actions fire:

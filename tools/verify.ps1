@@ -70,6 +70,7 @@ function Invoke-Check {
 try {
     Invoke-Check "import project (fresh clone prerequisite)" @("--headless", "--path", "game", "--import") | Out-Null
     Invoke-Check "M0 smoke: test scene loads" @("--headless", "--audio-driver", "Dummy", "--path", "game", "res://scenes/test_scene.tscn", "--quit-after", "5") '\[M0\] READY' | Out-Null
+    Invoke-Check "menu smoke: main menu loads" @("--headless", "--audio-driver", "Dummy", "--path", "game", "res://scenes/main_menu.tscn", "--quit-after", "5") '\[MENU\] READY' | Out-Null
     Invoke-Check "M1 smoke: movement scene loads" @("--headless", "--audio-driver", "Dummy", "--path", "game", "res://scenes/movement_test.tscn", "--quit-after", "5") '\[M1\] READY' | Out-Null
     Invoke-Check "M2 smoke: prototype scene loads" @("--headless", "--audio-driver", "Dummy", "--path", "game", "res://scenes/prototype.tscn", "--quit-after", "5") '\[M2\] READY' | Out-Null
     Invoke-Check "M5 smoke: boss arena loads" @("--headless", "--audio-driver", "Dummy", "--path", "game", "res://scenes/boss_test.tscn", "--quit-after", "5", "--", "--fresh-save") '\[M5\] READY' | Out-Null
@@ -87,6 +88,7 @@ try {
     Invoke-Check "regression: M2 demo verdict can fail" @("--headless", "--audio-driver", "Dummy", "--path", "game", "--script", "res://tests/m2_verdict_check.gd") 'ALL PASS' | Out-Null
     Invoke-Check "regression: evolution contract" @("--headless", "--audio-driver", "Dummy", "--path", "game", "--script", "res://tests/evolution_check.gd") 'ALL PASS' | Out-Null
     Invoke-Check "regression: energy contract" @("--headless", "--audio-driver", "Dummy", "--path", "game", "--script", "res://tests/energy_check.gd") 'ALL PASS' | Out-Null
+    Invoke-Check "regression: menu flow contract" @("--headless", "--audio-driver", "Dummy", "--path", "game", "--script", "res://tests/menu_check.gd") 'ALL PASS' | Out-Null
     Invoke-Check "regression: M3 demo verdict can fail" @("--headless", "--audio-driver", "Dummy", "--path", "game", "--script", "res://tests/m3_verdict_check.gd") 'ALL PASS' | Out-Null
     Invoke-Check "regression: boss state machine contract" @("--headless", "--audio-driver", "Dummy", "--path", "game", "--script", "res://tests/boss_check.gd") 'ALL PASS' | Out-Null
     Invoke-Check "regression: M5 demo verdict can fail" @("--headless", "--audio-driver", "Dummy", "--path", "game", "--script", "res://tests/m5_verdict_check.gd") 'ALL PASS' | Out-Null

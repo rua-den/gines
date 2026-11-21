@@ -10,6 +10,7 @@ A solo + AI 2D action Metroidvania about the journey of a new life, from a singl
 **Current milestone:** Milestones 0–3 passed automated checks and owner playtest. Milestone 4 (energy) and Milestone 5 (first boss) have observed automated PASS; their **owner feel checks are Open** — see the [Milestone Log](docs/MILESTONES.md). No milestone PASS is implied by the checks below.
 **Verified build (2026-11-21):** Godot 4.7.2; `tools/verify.ps1` → 42 checks; `tools/check_maps.ps1` → 8 maps, 540 checks; harness check → 65 checks.
 **Playable now:** a continuous region slice (prototype → Rot Bloom arena), `res://scenes/map_runner.tscn` (map01), and `res://scenes/map02.tscn` … `map08.tscn` — each with its own headless full-map test and autopilot. Planned abilities, bosses and the finale are **Proposed placeholders** (fallbacks documented in each map JSON); they are not implemented features, approved art, or a milestone PASS. The birth cinematic remains Open.
+**Entry point (2026-11-21):** the game now opens into a procedural main menu (`res://scenes/main_menu.tscn`) — Title → Main → Map Select → stage; its text/layout is procedural with no approved art direction.
 **Initial target:** A 4–6 hour PC game, with scope validated through a vertical slice.
 
 ## Documentation
