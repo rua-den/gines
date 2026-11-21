@@ -1,7 +1,7 @@
 extends SceneTree
 ## Headless rule check for the parameterized map03 stage.
 ##
-## Twelve named cases. Each case pairs the stage's pure evaluate_map_stage()
+## Fifteen named cases. Each case pairs the stage's pure evaluate_map_stage()
 ## contract with a real assertion on the instanced scene or on the map files, so
 ## a stage that only implements the evaluator but never builds the scene cannot
 ## pass. Violating facts are fed to the evaluator (deleting a named rule fails)
@@ -13,7 +13,7 @@ extends SceneTree
 ##     --script res://tests/map03_check.gd
 ## Exit code 0 = all cases pass, 1 = at least one failure.
 
-const EXPECTED_CASES := 12
+const EXPECTED_CASES := 15
 const MAP_RES := "res://resources/maps/map03.json"
 const STAGE_SCENE := "res://scenes/map03.tscn"
 const EXPECTED_ID := "map03"
@@ -453,6 +453,74 @@ func _case_runtime_copy_drift() -> void:
 			copy_ok, rule, canonical.substr(0, 12), runtime.substr(0, 12)])
 
 
+func _case_demo_flag_derived_from_map_id() -> void:
+	if _stage == null or not _stage.has_method("demo_flag"):
+		_check("demo flag, prefix and RESULT derive from map_id", false, "no derived-flag API")
+		return
+	var flag := str(_stage.call("demo_flag"))
+	var prefix := str(_stage.call("log_prefix"))
+	var pass_line := str(_stage.call("result_line", true))
+	var fail_line := str(_stage.call("result_line", false))
+	var generic_ok: bool = bool(_stage.call("is_demo_arg", "--map-demo=map03"))
+	var legacy_ok: bool = bool(_stage.call("is_demo_arg", "--map03-demo"))
+	var other_generic: bool = bool(_stage.call("is_demo_arg", "--map-demo=map02"))
+	var other_legacy: bool = bool(_stage.call("is_demo_arg", "--map02-demo"))
+	var ok: bool = flag == "--map-demo=map03" and prefix == "[MAP03]" \
+		and pass_line == "MAP03 RESULT: PASS" and fail_line == "MAP03 RESULT: FAIL" \
+		and generic_ok and legacy_ok and not other_generic and not other_legacy
+	_check("demo flag, prefix and RESULT derive from map_id", ok,
+		"flag=%s prefix=%s pass=%s fail=%s generic=%s legacy=%s other=%s/%s" % [
+			flag, prefix, pass_line, fail_line, generic_ok, legacy_ok,
+			other_generic, other_legacy])
+
+
+func _case_unknown_json_key_rejected() -> void:
+	if _stage == null:
+		_check("unknown SCHEMA key is rejected by name", false, "<no stage>")
+		return
+	var bad := _json.duplicate(true)
+	bad["fission_dash"] = {"id": "stage5", "status": "Open"}
+	var reported: Array = _stage.call("load_map_data", bad)
+	var named := false
+	for f in reported:
+		if str(f).begins_with("unsupported") and str(f).find("fission_dash") != -1:
+			named = true
+	var real: Array = _stage.call("load_map_data", _json)
+	var ok: bool = named and real.is_empty()
+	_check("unknown SCHEMA key is rejected by name", ok,
+		"reported=%s restored=%s" % [reported, real])
+
+
+func _case_same_frame_rebuild_has_no_duplicates() -> void:
+	if _stage == null:
+		_check("same-frame rebuild leaves no duplicate actors", false, "<no stage>")
+		return
+	var first: Array = _stage.call("load_map_data", _json)
+	var second: Array = _stage.call("load_map_data", _json)
+	var players := 0
+	var cameras := 0
+	var zones := 0
+	var huds := 0
+	var bosses := 0
+	for child in _stage.get_children():
+		if child is PlayerController:
+			players += 1
+		elif child is Camera2D:
+			cameras += 1
+		elif child is EvolutionZone:
+			zones += 1
+		elif child is CanvasLayer:
+			huds += 1
+		elif child is BloomBoss or child is Predator:
+			bosses += 1
+	var ok: bool = first.is_empty() and second.is_empty() \
+		and players == 1 and cameras == 1 and zones == 1 \
+		and huds == 1 and bosses == 1
+	_check("same-frame rebuild leaves no duplicate actors", ok,
+		"first=%s second=%s players=%d cameras=%d zones=%d huds=%d bosses=%d" % [
+			first, second, players, cameras, zones, huds, bosses])
+
+
 # ------------------------------------------------------------------- entry
 
 func _init() -> void:
@@ -472,6 +540,9 @@ func _init() -> void:
 	await _case_player_traverses_in_bounds()
 	await _case_unsupported_ids_rejected()
 	await _case_runtime_copy_drift()
+	await _case_demo_flag_derived_from_map_id()
+	await _case_unknown_json_key_rejected()
+	await _case_same_frame_rebuild_has_no_duplicates()
 	if _stage != null and is_instance_valid(_stage):
 		_stage.queue_free()
 	await _frames(2)

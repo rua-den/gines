@@ -5,3 +5,8 @@
 [node name="MapStage" type="Node2D"]
 script = ExtResource("1_stage")
 map_id = "map03"
+mote_positions = Array[Vector2]([Vector2(520, 900), Vector2(700, 900), Vector2(880, 900)])
+zone_pos = Vector2(960, 880)
+boss_pos = Vector2(1560, 520)
+default_checkpoint = Vector2(1020, 900)
+complete_text = "MAP03 COMPLETE — the golden alcove has changed you"

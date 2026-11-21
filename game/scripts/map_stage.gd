@@ -5,18 +5,21 @@ extends Node2D
 ## player loop: geometry -> motes -> evolution -> gate -> boss -> completion,
 ## with a shelter retry that never rolls back progress.
 ##
-## Task 1 implements map03 only (Advisor A order). Its boss `rot_bloom` and
-## upgrade grants already exist in code. Unsupported ids (unknown map, future
-## ability key, unimplemented boss with no fallback) produce NAMED failures and
-## are never silently skipped. No existing game script, scene, save field or
-## input action is changed.
+## Per-map placement and copy come from @export vars (overridden in each thin
+## scene); capability whitelists stay in code as honest declarations of what
+## this build can execute. Unsupported ids (unknown map, a key outside the
+## SCHEMA.md allow-list, an unimplemented boss with no documented fallback)
+## produce NAMED failures and are never silently skipped. No existing game
+## script, scene, save field or input action is changed.
 ##
-## `--map03-demo` drives the full loop headlessly and prints
-## `MAP03 RESULT: PASS` / `FAIL`, exiting 0 / 1.
+## `--map-demo=<id>` drives the full loop headlessly and prints
+## `<MAPID> RESULT: PASS` / `FAIL`, exiting 0 / 1. The legacy `--map03-demo`
+## flag is still accepted.
 
 const MAP_DIR := "res://resources/maps/"
 const PLAYER_SCENE := "res://scenes/player.tscn"
-const EXPECTED_MAP_ID := "map03"
+## Capability whitelists: declarations of what this build can execute, not
+## per-map requirements. Adding an id here is an honest feature flag.
 const SUPPORTED_MAP_IDS := ["map03"]
 const SUPPORTED_BOSS_IDS := ["rot_bloom"]
 const SUPPORTED_BUILT_FROM := "Predator"
@@ -24,19 +27,34 @@ const SUPPORTED_OBSTACLE_KINDS := ["static_slab", "gate", "hazard_zone"]
 ## Implemented upgrade grants (schema v1 whitelist).
 const SUPPORTED_GRANTS := ["surface_grip", "crawl", "absorption_channel",
 	"spike_ring", "spike_burst", "energy_pool"]
-## Keys that only future maps introduce. Never silently skipped.
-const FUTURE_ID_KEYS := ["hazard", "hazards", "hazard_zone", "hazard_zones",
-	"combo", "combos", "dash", "glide", "double_jump"]
+## Allow-list of known SCHEMA.md v1 keys. A future key must be added here
+## deliberately; any other key is a named `unsupported` failure, never skipped.
+const KNOWN_KEYS := [
+	# top level
+	"artifact_type", "schema_version", "id", "stage", "name",
+	"developmental_beat", "plan_refs", "room", "obstacles", "upgrade",
+	"boss", "deferred_world_fields", "checkpoint", "resources", "narrative",
+	"progression", "stage_status", "status",
+	# room / obstacles[]
+	"width", "height", "coordinate_space", "kind", "rect", "role",
+	"engine_status", "fallback_until_implemented",
+	# upgrade / boss
+	"grants", "plan_ref", "permanent", "additive", "capacity",
+	"softlock_fallback", "equipped_limit", "loop", "weak_window",
+	"gate_requires", "retry_rule", "built_from", "solution",
+	# resources / narrative / progression
+	"model", "meter_count", "ability_pools", "sources", "future_resource",
+	"mother_role", "beat", "entry_requires", "exit_unlocks",
+	# deferred_world_fields and its stubs
+	"visual_identity", "secrets", "return_signals", "narrative_discoveries",
+	"value", "entries",
+	# checkpoint
+	"position",
+]
 
-const MOTE_POSITIONS := [Vector2(520.0, 900.0), Vector2(700.0, 900.0),
-	Vector2(880.0, 900.0)]
 const MOTE_NUTRITION := 10.0
-const ZONE_POS := Vector2(960.0, 880.0)
-const BOSS_POS := Vector2(1560.0, 520.0)
-const DEFAULT_CHECKPOINT := Vector2(1020.0, 900.0)
 const BOUNDS_MARGIN := 60.0
 const STANDOFF := 95.0
-const COMPLETE_TEXT := "MAP03 COMPLETE — the golden alcove has changed you"
 const DEMO_TIMEOUT := 90.0
 
 const GATE_FILL := Color(0.30, 0.08, 0.24, 0.92)
@@ -47,6 +65,15 @@ const HUD_TEAL := Color(0.56, 0.96, 0.89)
 const HUD_GOLD := Color(0.95, 0.76, 0.31)
 
 @export var map_id: String = "map03"
+## Per-map placement/copy. Defaults match the original map03 layout; each thin
+## scene overrides them. These are presentation/config values, not capability
+## whitelists (those stay in code above).
+@export var mote_positions: Array[Vector2] = [Vector2(520.0, 900.0),
+	Vector2(700.0, 900.0), Vector2(880.0, 900.0)]
+@export var zone_pos: Vector2 = Vector2(960.0, 880.0)
+@export var boss_pos: Vector2 = Vector2(1560.0, 520.0)
+@export var default_checkpoint: Vector2 = Vector2(1020.0, 900.0)
+@export var complete_text: String = "MAP03 COMPLETE — the golden alcove has changed you"
 
 var map_data: Dictionary = {}
 var slabs: Array[StaticBody2D] = []
@@ -63,7 +90,7 @@ var completion_marker: Label = null
 var boss_defeated: bool = false
 var load_failures: Array[String] = []
 var room_rect: Rect2 = Rect2(0.0, 0.0, 1920.0, 1080.0)
-var _checkpoint_pos := DEFAULT_CHECKPOINT
+var _checkpoint_pos := Vector2.ZERO
 
 var _min_pos := Vector2.INF
 var _max_pos := Vector2(-INF, -INF)
@@ -80,36 +107,93 @@ var _demo_finished := false
 var _bursts := 0
 
 
+# -------------------------------------------------------- derived from map_id
+
+## Log/RESULT lines and the demo flag all follow `map_id`, so a thin scene only
+## has to set that one value (plus the placement exports).
+func log_prefix() -> String:
+	return "[%s]" % map_id.to_upper()
+
+
+func demo_flag() -> String:
+	return "--map-demo=%s" % map_id
+
+
+func is_demo_arg(arg: String) -> bool:
+	# Legacy `--map03-demo` remains accepted; the generic form is the default.
+	return arg == demo_flag() or arg == "--%s-demo" % map_id
+
+
+func result_line(passed: bool) -> String:
+	return "%s RESULT: %s" % [map_id.to_upper(), "PASS" if passed else "FAIL"]
+
+
 func _ready() -> void:
 	for arg in OS.get_cmdline_user_args():
-		if arg == "--map03-demo":
+		if is_demo_arg(arg):
 			_demo = true
 	var failures := load_map_data(_load_map())
 	if not failures.is_empty():
 		for f in failures:
-			push_error("[MAP03] " + f)
+			push_error(log_prefix() + " " + f)
 		if _demo:
 			_demo_abort(failures)
 		return
-	print("[MAP03] READY %s" % str(map_data.get("id", "")))
+	print("%s READY %s" % [log_prefix(), str(map_data.get("id", ""))])
 	if _demo:
 		player.demo_active = true
-		print("[MAP03] demo autopilot enabled")
+		print(log_prefix(), " demo autopilot enabled")
 
 
 func _load_map() -> Dictionary:
 	var path := MAP_DIR + map_id + ".json"
 	var file := FileAccess.open(path, FileAccess.READ)
 	if file == null:
-		push_error("[MAP03] cannot open " + path)
+		push_error(log_prefix() + " cannot open " + path)
 		return {}
 	var text := file.get_as_text()
 	file.close()
 	var parsed: Variant = JSON.parse_string(text)
 	if parsed is Dictionary:
 		return parsed
-	push_error("[MAP03] invalid JSON in " + path)
+	push_error(log_prefix() + " invalid JSON in " + path)
 	return {}
+
+
+## Resolves a boss block to one of four executable outcomes. A documented
+## fallback is a non-empty `fallback_until_implemented` string. Unknown
+## built_from entities are named failures, never an empty spawn.
+func _boss_kind(boss_data: Dictionary) -> String:
+	var boss_id := str(boss_data.get("id", ""))
+	if SUPPORTED_BOSS_IDS.has(boss_id):
+		return "rot_bloom"
+	var fallback: Variant = boss_data.get("fallback_until_implemented", null)
+	var documented: bool = fallback is String and not (fallback as String).is_empty()
+	if not documented:
+		return "unsupported"
+	var built_from := str(boss_data.get("built_from", ""))
+	if built_from.is_empty():
+		# Maps 04-08 name no built_from entity: use a clearly labeled
+		# BloomBoss-loop placeholder instead of silently spawning nothing.
+		return "placeholder"
+	if built_from == SUPPORTED_BUILT_FROM:
+		return "built_from"
+	return "unsupported"
+
+
+## Recursively collects keys outside the SCHEMA.md allow-list at any nesting
+## level, so a new future ability key cannot hide inside a nested block.
+func _collect_unknown_keys(value: Variant, out: Array[String]) -> void:
+	if value is Dictionary:
+		var dict: Dictionary = value
+		for key in dict.keys():
+			var k := str(key)
+			if not KNOWN_KEYS.has(k) and not out.has(k):
+				out.append(k)
+			_collect_unknown_keys(dict[key], out)
+	elif value is Array:
+		for item in (value as Array):
+			_collect_unknown_keys(item, out)
 
 
 ## Translates map data into the facts the pure evaluator inspects. A missing
@@ -120,9 +204,9 @@ func _facts_for(data: Dictionary) -> Dictionary:
 	facts["map_id"] = str(data.get("id", ""))
 	var boss_data: Dictionary = data.get("boss", {})
 	facts["boss_id"] = str(boss_data.get("id", ""))
-	var fallback: Variant = boss_data.get("fallback_until_implemented", null)
-	facts["has_fallback"] = fallback != null \
-		and str(boss_data.get("built_from", "")) == SUPPORTED_BUILT_FROM
+	var boss_kind := _boss_kind(boss_data)
+	facts["boss_kind"] = boss_kind
+	facts["has_fallback"] = boss_kind == "built_from" or boss_kind == "placeholder"
 	var kinds: Array[String] = []
 	var obstacles: Array = data.get("obstacles", [])
 	for o in obstacles:
@@ -134,19 +218,9 @@ func _facts_for(data: Dictionary) -> Dictionary:
 	for g in (upgrade.get("grants", []) as Array):
 		grants.append(str(g))
 	facts["upgrade_grants"] = grants
-	# Scan the map, its upgrade/boss blocks and every obstacle for keys that
-	# belong to unimplemented future abilities (dash, glide, hazard, combos).
-	var sources: Array = [data, upgrade, boss_data]
-	for o in obstacles:
-		if o is Dictionary:
-			sources.append(o)
-	var future_ids: Array[String] = []
-	for source in sources:
-		var src: Dictionary = source
-		for key in FUTURE_ID_KEYS:
-			if src.has(key) and not future_ids.has(key):
-				future_ids.append(key)
-	facts["future_ids"] = future_ids
+	var unknown_keys: Array[String] = []
+	_collect_unknown_keys(data, unknown_keys)
+	facts["unknown_keys"] = unknown_keys
 	return facts
 
 
@@ -158,9 +232,16 @@ func evaluate_map_stage(facts: Dictionary) -> Array[String]:
 	var failures: Array[String] = []
 	if facts.has("map_id") and not SUPPORTED_MAP_IDS.has(str(facts["map_id"])):
 		failures.append("unsupported: map id '%s' is not runnable" % str(facts["map_id"]))
-	if facts.has("future_ids"):
-		for id in (facts["future_ids"] as Array):
-			failures.append("unsupported: future id '%s' is not implemented" % str(id))
+	# `future_ids` is kept as an accepted input for callers that assert a single
+	# rule in isolation; `_facts_for` supplies `unknown_keys` from the allow-list.
+	if facts.has("unknown_keys") or facts.has("future_ids"):
+		var keys: Array = []
+		if facts.has("unknown_keys"):
+			keys = facts["unknown_keys"]
+		if facts.has("future_ids"):
+			keys = facts["future_ids"]
+		for id in keys:
+			failures.append("unsupported: unknown key '%s' is not in the SCHEMA.md allow-list" % str(id))
 	if facts.has("boss_id"):
 		var boss_id := str(facts["boss_id"])
 		if not SUPPORTED_BOSS_IDS.has(boss_id) and not bool(facts.get("has_fallback", false)):
@@ -246,18 +327,26 @@ func load_map_data(data: Dictionary) -> Array[String]:
 	return failures
 
 
+## Detach before freeing: queue_free() is deferred to end of frame, so a
+## same-frame rebuild would otherwise leave two players/cameras in the tree.
+func _dispose(node: Node) -> void:
+	if node == null or not is_instance_valid(node):
+		return
+	var parent := node.get_parent()
+	if parent != null:
+		parent.remove_child(node)
+	node.queue_free()
+
+
 func _clear_built() -> void:
 	for slab in slabs:
-		if is_instance_valid(slab):
-			slab.queue_free()
+		_dispose(slab)
 	slabs.clear()
 	for mote in motes:
-		if is_instance_valid(mote):
-			mote.queue_free()
+		_dispose(mote)
 	motes.clear()
 	for node in [player, zone, boss, camera, hud, completion_marker]:
-		if node != null and is_instance_valid(node):
-			(node as Node).queue_free()
+		_dispose(node)
 	player = null
 	motes = []
 	zone = null
@@ -317,12 +406,12 @@ func _build_slabs(data: Dictionary) -> void:
 func _build_player(data: Dictionary) -> void:
 	var checkpoint: Dictionary = data.get("checkpoint", {})
 	var pos: Array = checkpoint.get("position", [])
-	_checkpoint_pos = DEFAULT_CHECKPOINT
+	_checkpoint_pos = default_checkpoint
 	if pos.size() >= 2:
 		_checkpoint_pos = Vector2(float(pos[0]), float(pos[1]))
 	var packed: PackedScene = load(PLAYER_SCENE)
 	if packed == null:
-		push_error("[MAP03] cannot load " + PLAYER_SCENE)
+		push_error(log_prefix() + " cannot load " + PLAYER_SCENE)
 		return
 	var p: PlayerController = packed.instantiate() as PlayerController
 	p.process_mode = Node.PROCESS_MODE_PAUSABLE
@@ -335,7 +424,7 @@ func _build_player(data: Dictionary) -> void:
 
 
 func _build_motes() -> void:
-	for pos in MOTE_POSITIONS:
+	for pos in mote_positions:
 		var mote := Absorbable.new()
 		mote.process_mode = Node.PROCESS_MODE_PAUSABLE
 		mote.position = pos
@@ -348,33 +437,53 @@ func _build_motes() -> void:
 func _build_zone() -> void:
 	zone = EvolutionZone.new()
 	zone.process_mode = Node.PROCESS_MODE_PAUSABLE
-	zone.position = ZONE_POS
+	zone.position = zone_pos
 	add_child(zone)
 
 
 func _build_boss(data: Dictionary) -> void:
 	var boss_data: Dictionary = data.get("boss", {})
 	var boss_id := str(boss_data.get("id", ""))
-	if boss_id == "rot_bloom":
-		var bloom := BloomBoss.new()
-		bloom.position = BOSS_POS
-		add_child(bloom)
-		bloom.defeated.connect(_on_boss_defeated)
-		boss = bloom
-		return
-	# Documented fallback only: an unimplemented boss may use its built_from
-	# entity as an explicitly Proposed placeholder, never as an approved enemy.
-	var fallback: Variant = boss_data.get("fallback_until_implemented", null)
-	if fallback != null and str(boss_data.get("built_from", "")) == SUPPORTED_BUILT_FROM:
-		var pred := Predator.new()
-		pred.position = BOSS_POS
-		pred.patrol_min_x = BOSS_POS.x - 120.0
-		pred.patrol_max_x = BOSS_POS.x + 120.0
-		pred.player = player
-		add_child(pred)
-		pred.killed.connect(_on_boss_defeated)
-		boss = pred
-	# Otherwise boss stays null; evaluate_map_stage already named the failure.
+	match _boss_kind(boss_data):
+		"rot_bloom":
+			_spawn_bloom(boss_id, false)
+		"built_from":
+			# An unimplemented boss uses its built_from entity as an explicitly
+			# Proposed placeholder, never as an approved enemy.
+			var pred := Predator.new()
+			pred.name = "BuiltFromBoss"
+			pred.position = boss_pos
+			pred.patrol_min_x = boss_pos.x - 120.0
+			pred.patrol_max_x = boss_pos.x + 120.0
+			pred.player = player
+			pred.set_meta("boss_id", boss_id)
+			add_child(pred)
+			pred.killed.connect(_on_boss_defeated)
+			boss = pred
+		"placeholder", _:
+			# Maps 04-08 name no built_from entity. Reuse the executable
+			# BloomBoss loop as a clearly labeled, design-only placeholder;
+			# the gate already rejected ids with no documented fallback.
+			_spawn_bloom(boss_id, true)
+
+
+func _spawn_bloom(boss_id: String, placeholder: bool) -> void:
+	var bloom := BloomBoss.new()
+	bloom.position = boss_pos
+	bloom.name = "BossPlaceholder" if placeholder else "RotBloom"
+	bloom.set_meta("boss_id", boss_id)
+	if placeholder:
+		bloom.set_meta("placeholder", true)
+		var label := Label.new()
+		label.name = "PlaceholderLabel"
+		label.text = "PLACEHOLDER boss '%s' — BloomBoss loop (design-only, not approved)" % boss_id
+		label.add_theme_font_size_override("font_size", 14)
+		label.add_theme_color_override("font_color", HUD_GOLD)
+		label.position = Vector2(0.0, -92.0)
+		bloom.add_child(label)
+	add_child(bloom)
+	bloom.defeated.connect(_on_boss_defeated)
+	boss = bloom
 
 
 func _build_camera() -> void:
@@ -471,7 +580,7 @@ func _open_gate() -> void:
 		(boss as BloomBoss).set_player(player)
 	if zone != null:
 		zone.mark_used()
-	print("[MAP03] evolution gate opened")
+	print(log_prefix(), " evolution gate opened")
 
 
 func _on_boss_defeated() -> void:
@@ -479,12 +588,12 @@ func _on_boss_defeated() -> void:
 		return
 	boss_defeated = true
 	if completion_marker == null:
-		completion_marker = _make_label(COMPLETE_TEXT, 26, HUD_GOLD)
+		completion_marker = _make_label(complete_text, 26, HUD_GOLD)
 		completion_marker.name = "CompletionMarker"
 		completion_marker.position = Vector2(1180.0, 300.0)
 		completion_marker.offset_right = 1700.0
 		add_child(completion_marker)
-	print("[MAP03] REGION COMPLETE")
+	print(log_prefix(), " REGION COMPLETE")
 
 
 func _on_burst_fired(_at: Vector2) -> void:
@@ -504,7 +613,7 @@ func retry() -> void:
 		boss.set("defeated", false)
 	if camera != null:
 		camera.global_position = _checkpoint_pos
-	print("[MAP03] shelter retry")
+	print(log_prefix(), " shelter retry")
 
 
 func _process(delta: float) -> void:
@@ -640,8 +749,8 @@ func _demo_abort(extra: Array[String]) -> void:
 	for f in extra:
 		failures.append(f)
 	for f in failures:
-		print("[MAP03] FAILED: ", f)
-	print("MAP03 RESULT: FAIL")
+		print(log_prefix(), " FAILED: ", f)
+	print(result_line(false))
 	get_tree().quit(1)
 
 
@@ -657,9 +766,9 @@ func _finish_demo(extra: Array[String]) -> void:
 	for f in extra:
 		failures.append(f)
 	for f in failures:
-		print("[MAP03] FAILED: ", f)
-	print("[MAP03] demo: evolved=", player != null and player.evolved,
+		print(log_prefix(), " FAILED: ", f)
+	print(log_prefix(), " demo: evolved=", player != null and player.evolved,
 		" defeated=", boss_defeated, " bursts=", _bursts,
 		" nutrition=", float(player.nutrition) if player != null else -1.0)
-	print("MAP03 RESULT: ", "PASS" if failures.is_empty() else "FAIL")
+	print(result_line(failures.is_empty()))
 	get_tree().quit(0 if failures.is_empty() else 1)
