@@ -243,6 +243,17 @@ through the input system so the readout proves the actions fire:
 godot --path game res://scenes/test_scene.tscn --resolution 1280x720 -- --screenshot=/tmp/m0.png
 ```
 
+### Map runner (`res://scenes/map_runner.tscn`)
+
+`res://scenes/map_runner.tscn` loads `res://resources/maps/map01.json`, a
+generated runtime copy of the canonical `docs/maps/map01.json`. **map01 is the
+only playable map.** Maps 02–08 remain **design-only**: their JSON describes
+planned stages and is validated by `tools/check_maps.ps1`, but no runtime scene
+loads them. The planned boss `the_drifter` currently spawns a `Predator`, which
+is a **Proposed** placeholder for `the_drifter` (not an approved enemy or final
+art) following the map data's `fallback_until_implemented` field. This is a
+runtime prototype, not a milestone PASS, and implies no art approval.
+
 ## Layout
 
 ```text

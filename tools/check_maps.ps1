@@ -193,6 +193,20 @@ $bossIds = @($parsed.Values | ForEach-Object { [string]$_.boss.id })
 Check (($upgradeIds | Group-Object | Where-Object Count -gt 1).Count -eq 0) 'set' 'upgrade ids must be unique'
 Check (($bossIds | Group-Object | Where-Object Count -gt 1).Count -eq 0) 'set' 'boss ids must be unique'
 
+# Runtime copy drift guard: game/resources/maps/map01.json is a generated copy
+# of the canonical docs/maps/map01.json. Read-only — never rewrites the copy.
+$canonicalPath = Join-Path $root 'docs/maps/map01.json'
+$runtimePath = Join-Path $root 'game/resources/maps/map01.json'
+$canonicalHash = ''
+$runtimeHash = ''
+if (Test-Path -LiteralPath $canonicalPath -PathType Leaf) {
+	$canonicalHash = (Get-FileHash -LiteralPath $canonicalPath -Algorithm SHA256).Hash
+}
+if (Test-Path -LiteralPath $runtimePath -PathType Leaf) {
+	$runtimeHash = (Get-FileHash -LiteralPath $runtimePath -Algorithm SHA256).Hash
+}
+Check (($canonicalHash -ne '') -and ($canonicalHash -eq $runtimeHash)) 'map01.json' 'runtime map copy drifted from canonical'
+
 if ($script:errors.Count -gt 0) {
 	foreach ($failure in $script:errors) {
 		Write-Output "[FAIL] $failure"

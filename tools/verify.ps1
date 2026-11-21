@@ -84,6 +84,7 @@ try {
     Invoke-Check "regression: boss state machine contract" @("--headless", "--audio-driver", "Dummy", "--path", "game", "--script", "res://tests/boss_check.gd") 'ALL PASS' | Out-Null
     Invoke-Check "regression: M5 demo verdict can fail" @("--headless", "--audio-driver", "Dummy", "--path", "game", "--script", "res://tests/m5_verdict_check.gd") 'ALL PASS' | Out-Null
     Invoke-Check "regression: region slice rules" @("--headless", "--audio-driver", "Dummy", "--path", "game", "--script", "res://tests/region_slice_check.gd") 'ALL PASS' | Out-Null
+    Invoke-Check "regression: map runner rules" @("--headless", "--audio-driver", "Dummy", "--path", "game", "--script", "res://tests/map_runner_check.gd") 'ALL PASS' | Out-Null
 
     if ($SkipDemo) {
         Write-Host "[SKIP] M1 demo autopilot (-SkipDemo)"
