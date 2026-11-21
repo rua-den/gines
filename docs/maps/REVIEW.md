@@ -92,7 +92,7 @@ an observed automated PASS with its human feel check open
 | 9 negative fixtures | all exit 1 with named failures (recorded on the eight-map set) |
 | map09 runtime-copy drift control | exit 1 with `[map09.json] runtime map copy drifted from canonical`; restored copy re-passes |
 | `pwsh -File harness/scripts/check.ps1` | `HARNESS CHECK PASSED: 65 checks`, exit 0 |
-| `git status` | no `game/` changes |
+| `git status` | clean; map runtime scenes/scripts are committed implementation, not milestone decisions |
 
 These are evidence, not decisions. Only the owner can approve a direction or
 record a milestone verdict.

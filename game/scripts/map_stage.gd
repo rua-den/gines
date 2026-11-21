@@ -659,7 +659,7 @@ func _update_hud() -> void:
 		hud_status.text = "Feed three motes, then evolve at the alcove (gate closed)"
 	elif not boss_defeated and boss is BloomBoss:
 		hud_status.text = "Bloom %d/%d  •  %s" % [
-			int(boss.get("health")), BloomBoss.MAX_HEALTH, str(boss.call("phase_name"))]
+			int(boss.get("health")), int(boss.call("max_health")), str(boss.call("phase_name"))]
 	elif not boss_defeated and boss is Predator and not boss_fallback_label.is_empty():
 		hud_status.text = boss_fallback_label
 	elif boss_defeated:
