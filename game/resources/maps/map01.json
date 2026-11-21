@@ -1,0 +1,100 @@
+{
+  "artifact_type": "design_only",
+  "schema_version": 1,
+  "id": "map01",
+  "stage": 1,
+  "name": "The First Cell",
+  "developmental_beat": "Fertilisation: the first movement through a warm fluid pocket.",
+  "plan_refs": [
+    "GAME_DESIGN_FOUNDATION.md §7 (early: swimming, crawling, surface gripping)",
+    "MILESTONES.md M1 (player movement)"
+  ],
+  "room": {
+    "width": 1920,
+    "height": 1080,
+    "coordinate_space": "design_only"
+  },
+  "obstacles": [
+    {
+      "id": "floor_membrane",
+      "kind": "static_slab",
+      "rect": [0, 980, 1920, 100],
+      "role": "floor — crawl surface and lower boundary",
+      "engine_status": "implemented"
+    },
+    {
+      "id": "upper_membrane",
+      "kind": "static_slab",
+      "rect": [0, 0, 1920, 60],
+      "role": "ceiling — grip surface and upper boundary",
+      "engine_status": "implemented"
+    },
+    {
+      "id": "crawl_slit_pillar",
+      "kind": "static_slab",
+      "rect": [860, 620, 90, 360],
+      "role": "pillar leaving a low slit that favours crawling",
+      "engine_status": "implemented"
+    },
+    {
+      "id": "floating_shelf",
+      "kind": "static_slab",
+      "rect": [1180, 640, 380, 40],
+      "role": "floating platform — first route choice",
+      "engine_status": "implemented"
+    }
+  ],
+  "upgrade": {
+    "id": "surface_grip",
+    "grants": ["surface_grip", "crawl"],
+    "name": "Body control: swim, crawl, grip",
+    "plan_ref": "GAME_DESIGN_FOUNDATION.md §7 early game; MILESTONES.md M1",
+    "permanent": true,
+    "additive": true,
+    "capacity": { "equipped_limit": null, "status": "Open" },
+    "engine_status": "implemented",
+    "softlock_fallback": "Movement is free from the start; no earlier requirement depends on this unlock.",
+    "fallback_until_implemented": null
+  },
+  "boss": {
+    "id": "the_drifter",
+    "name": "The Drifter",
+    "kind": "hostile_organism",
+    "engine_status": "planned",
+    "built_from": "Predator",
+    "loop": "Drifts across the chamber and opens a vacuole before a short lunge.",
+    "weak_window": "The vacuole stays open for 1.2 s after the lunge.",
+    "gate_requires": ["surface_grip"],
+    "retry_rule": "shelter",
+    "softlock_fallback": "The Drifter is outrunnable; the floor crawl and ceiling grip give two dodge routes.",
+    "fallback_until_implemented": "Use the existing Predator as the hostile body until a distinct boss is built.",
+    "solution": "Dodge the lunge, then absorb the exposed vacuole."
+  },
+  "deferred_world_fields": {
+    "visual_identity": { "value": null, "status": "Open" },
+    "secrets": { "entries": [], "status": "Open" },
+    "return_signals": { "entries": [], "status": "Open" },
+    "narrative_discoveries": { "entries": [], "status": "Open" }
+  },
+  "checkpoint": {
+    "kind": "shelter",
+    "position": [300, 500]
+  },
+  "resources": {
+    "model": "single_nutrition",
+    "meter_count": 1,
+    "sources": ["nutrient motes"],
+    "future_resource": null
+  },
+  "narrative": {
+    "mother_role": "absent",
+    "beat": "Warm fluid and a distant vibration; the setting is not named yet."
+  },
+  "progression": {
+    "model": "illustrative_linear",
+    "entry_requires": null,
+    "exit_unlocks": "map02"
+  },
+  "stage_status": "partial",
+  "status": "Proposed"
+}
