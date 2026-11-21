@@ -49,7 +49,7 @@ Panels, one visible at a time:
      If no save exists, show a short "no progress" line and stay on Main.
    - *Map Select* opens the stage list.
    - *Quit* quits the tree.
-3. **Map Select** — entries: Region Slice, map01 … map08. Each line shows the
+3. **Map Select** — exactly 9 entries: Region Slice, map01 … map08. Each line shows the
    stage name and an honest status marker: `code exists`, `placeholder`, or
    `proposed placeholder`. `move_up/down` navigates, `interact` starts the
    chosen scene via `get_tree().change_scene_to_file(path)`, `attack`/`pause`
@@ -100,11 +100,11 @@ No other permanent choice is introduced.
 - [ ] `game/tests/menu_check.gd` asserts: initial panel Title; Title→Main on
       interact; Main navigation wraps; New Game requires confirmation and only
       then clears the save; Continue with no save stays on Main; Map Select
-      lists all 10 entries with honest statuses; selecting entry returns the
+      lists all 9 entries with honest statuses; selecting entry returns the
       correct `res://scenes/...` path; back navigation works; Quit is callable;
       a named negative fixture fails.
-- [ ] Verifier gains smoke + regression lines (42 → 44); checker 540 unchanged;
-      harness 65 unchanged.
+- [ ] Verifier gains smoke + regression lines (31 → 33 with `-SkipDemo`,
+      42 → 44 full); checker 540 unchanged; harness 65 unchanged.
 - [ ] No unobserved PASS, no art approval, no milestone decision.
 
 ## Risks
