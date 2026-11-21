@@ -254,6 +254,11 @@ is a **Proposed** placeholder for `the_drifter` (not an approved enemy or final
 art) following the map data's `fallback_until_implemented` field. This is a
 runtime prototype, not a milestone PASS, and implies no art approval.
 
+`res://scenes/map02.tscn` ("The Divide") is also runnable through the same
+parameterized stage: its planned boss `the_splitter` uses the documented
+`built_from: Predator` fallback and remains a **Proposed placeholder** (not an
+approved enemy or art), and there is no milestone PASS implied.
+
 ```powershell
 # Play map01 from the JSON-driven runner
 & $godot --path game res://scenes/map_runner.tscn

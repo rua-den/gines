@@ -410,9 +410,9 @@ func _case_unsupported_ids_rejected() -> void:
 	var original_boss: Node = _stage.get("boss")
 	# Negative fixture 1: an unknown map id must be rejected and leave the scene intact.
 	var bad_id := _json.duplicate(true)
-	bad_id["id"] = "map02"
+	bad_id["id"] = "map99"
 	var reported_id: Array = _stage.call("load_map_data", bad_id)
-	var rule_id := _failures({"map_id": "map02"})
+	var rule_id := _failures({"map_id": "map99"})
 	# Negative fixture 2: a future ability key must be named, never skipped.
 	var bad_future := _json.duplicate(true)
 	bad_future["hazards"] = [{"id": "acid_pool", "kind": "hazard_zone"}]

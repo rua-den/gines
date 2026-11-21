@@ -226,10 +226,10 @@ func _case_missing_built_from() -> void:
 
 func _case_unsupported_map_id() -> void:
 	var bad := _json.duplicate(true)
-	bad["id"] = "map02"
+	bad["id"] = "map99"
 	var original := _enemy()
 	var reported: Array = _call_runner("load_map_data", bad)
-	var rule := _failures({"map_id": "map02"})
+	var rule := _failures({"map_id": "map99"})
 	var still_same: bool = original != null and original == _enemy() and original is Predator
 	var ok: bool = _has(reported, "unsupported") and _has(rule, "unsupported") and still_same
 	_check("unsupported map id is rejected", ok,

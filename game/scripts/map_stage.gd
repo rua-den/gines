@@ -20,13 +20,16 @@ const MAP_DIR := "res://resources/maps/"
 const PLAYER_SCENE := "res://scenes/player.tscn"
 ## Capability whitelists: declarations of what this build can execute, not
 ## per-map requirements. Adding an id here is an honest feature flag.
-const SUPPORTED_MAP_IDS := ["map03"]
+const SUPPORTED_MAP_IDS := ["map03", "map02"]
 const SUPPORTED_BOSS_IDS := ["rot_bloom"]
 const SUPPORTED_BUILT_FROM := "Predator"
 const SUPPORTED_OBSTACLE_KINDS := ["static_slab", "gate", "hazard_zone"]
 ## Implemented upgrade grants (schema v1 whitelist).
 const SUPPORTED_GRANTS := ["surface_grip", "crawl", "absorption_channel",
-	"spike_ring", "spike_burst", "energy_pool"]
+	"spike_ring", "spike_burst", "energy_pool",
+	# map02's absorption_channel also grants the single nutrition resource,
+	# which is implemented by Absorbable + PlayerController.nutrition.
+	"nutrition"]
 ## Allow-list of known SCHEMA.md v1 keys. A future key must be added here
 ## deliberately; any other key is a named `unsupported` failure, never skipped.
 const KNOWN_KEYS := [
@@ -88,6 +91,8 @@ var hud: CanvasLayer = null
 var hud_status: Label = null
 var completion_marker: Label = null
 var boss_defeated: bool = false
+## One-line, honest label for a built_from fallback boss (never an approval).
+var boss_fallback_label: String = ""
 var load_failures: Array[String] = []
 var room_rect: Rect2 = Rect2(0.0, 0.0, 1920.0, 1080.0)
 var _checkpoint_pos := Vector2.ZERO
@@ -105,6 +110,9 @@ var _demo_stage_time := 0.0
 var _demo_run_time := 0.0
 var _demo_finished := false
 var _bursts := 0
+## Test-only demo flag: hold energy at zero so bursts cannot fire. It makes the
+## headless verdict failure-capable (a suppressed run must report FAIL).
+var _demo_zero_energy := false
 
 
 # -------------------------------------------------------- derived from map_id
@@ -132,6 +140,8 @@ func _ready() -> void:
 	for arg in OS.get_cmdline_user_args():
 		if is_demo_arg(arg):
 			_demo = true
+		elif arg == "--map-demo-zero-energy":
+			_demo_zero_energy = true
 	var failures := load_map_data(_load_map())
 	if not failures.is_empty():
 		for f in failures:
@@ -358,6 +368,7 @@ func _clear_built() -> void:
 	hud_status = null
 	completion_marker = null
 	boss_defeated = false
+	boss_fallback_label = ""
 	_bursts = 0
 	_demo_finished = false
 
@@ -457,6 +468,11 @@ func _build_boss(data: Dictionary) -> void:
 			pred.patrol_max_x = boss_pos.x + 120.0
 			pred.player = player
 			pred.set_meta("boss_id", boss_id)
+			# One Predator is the documented fallback; division stays planned.
+			boss_fallback_label = "one Predator stands in for %s; division is planned" % \
+				str(boss_data.get("name", boss_id))
+			pred.set_meta("fallback_label", boss_fallback_label)
+			print(log_prefix(), " ", boss_fallback_label)
 			add_child(pred)
 			pred.killed.connect(_on_boss_defeated)
 			boss = pred
@@ -541,8 +557,11 @@ func _update_hud() -> void:
 	elif not boss_defeated and boss is BloomBoss:
 		hud_status.text = "Bloom %d/%d  •  %s" % [
 			int(boss.get("health")), BloomBoss.MAX_HEALTH, str(boss.call("phase_name"))]
+	elif not boss_defeated and boss is Predator and not boss_fallback_label.is_empty():
+		hud_status.text = boss_fallback_label
 	elif boss_defeated:
-		hud_status.text = "The Rot Bloom has withered — the alcove is complete"
+		hud_status.text = "The Rot Bloom has withered — the alcove is complete" \
+			if boss is BloomBoss else "The fallback foe has fallen — the alcove is complete"
 	else:
 		hud_status.text = "Gate open"
 
@@ -551,6 +570,21 @@ func _update_hud() -> void:
 
 func gate_open() -> bool:
 	return player != null and player.evolved
+
+
+## Typed defeat check. A Boss exposes `is_defeated`; a Predator exposes
+## `defeated`. An absent/unknown property is ALIVE, never defeated, so no
+## boss type can be misreported as fallen through a null `bool()` cast.
+func boss_is_defeated() -> bool:
+	if boss_defeated:
+		return true
+	if boss is BloomBoss:
+		var bloom_value: Variant = boss.get("is_defeated")
+		return bloom_value != null and bool(bloom_value)
+	if boss is Predator:
+		var pred_value: Variant = boss.get("defeated")
+		return pred_value != null and bool(pred_value)
+	return false
 
 
 func _try_evolve() -> bool:
@@ -630,6 +664,8 @@ func _process(delta: float) -> void:
 	if camera != null and is_instance_valid(camera):
 		camera.global_position = player.global_position
 	_update_hud()
+	if _demo and _demo_zero_energy and player != null:
+		player.energy = 0.0
 	if _demo and not _demo_finished:
 		_demo_update(delta)
 
@@ -708,19 +744,28 @@ func _demo_gate() -> void:
 
 func _demo_combat() -> void:
 	player.demo_interact_held = false
-	if boss_defeated or (boss != null and bool(boss.get("is_defeated"))):
+	if boss_is_defeated():
 		player.demo_dir = Vector2.ZERO
 		player.demo_attack_pressed = false
 		if _demo_stage_time > 0.3:
 			_advance_demo(4)
 		return
+	if _demo_zero_energy and _demo_stage_time > 1.5:
+		# Failure-capable demo: bursts were suppressed on purpose, so report a
+		# named failure instead of waiting for the watchdog.
+		_demo_abort(["burst-inside: bursts suppressed (energy=0)"])
+		return
 	var to_boss := (boss as Node2D).global_position - player.global_position
 	var d := to_boss.length()
-	if boss is BloomBoss and (boss as BloomBoss).phase == "exposed":
-		player.demo_attack_pressed = d <= PlayerController.BURST_RANGE - 8.0 \
-			and player.can_attack()
-	else:
-		player.demo_attack_pressed = false
+	# The implemented BloomBoss keeps its weak-window gate; the built_from
+	# Predator fallback has no window and may burst whenever able to pay.
+	var window_open := false
+	if boss is BloomBoss:
+		window_open = (boss as BloomBoss).phase == "exposed"
+	elif boss is Predator:
+		window_open = true
+	player.demo_attack_pressed = window_open \
+		and d <= PlayerController.BURST_RANGE - 8.0 and player.can_attack()
 	if d > STANDOFF + 10.0:
 		player.demo_dir = to_boss.normalized()
 	elif d < STANDOFF - 10.0:
@@ -736,11 +781,30 @@ func _demo_facts() -> Dictionary:
 		"gate_open": gate_open(),
 		"completion_count": 1 if completion_marker != null else 0,
 		"boss_defeated": boss_defeated,
+		"boss_type": "Predator" if boss is Predator \
+			else ("BloomBoss" if boss is BloomBoss else "unknown"),
+		"boss_health": int(boss.get("health")) if boss != null else -1,
+		"bursts": _bursts,
 		"nutrition": float(player.nutrition) if player != null else -1.0,
 		"min_pos": _min_pos,
 		"max_pos": _max_pos,
 		"room_rect": room_rect,
 	}
+
+
+## Pure, failure-capable verdict for the headless demo. An empty list is PASS.
+## The burst bar is derived from the boss type: the implemented BloomBoss keeps
+## its >= 3 bar, while the built_from Predator falls at 2 health.
+func evaluate_demo(facts: Dictionary) -> Array[String]:
+	var failures := evaluate_map_stage(facts)
+	var bursts := int(facts.get("bursts", 0))
+	var required_bursts := 2 if str(facts.get("boss_type", "")) == "Predator" else 3
+	if bursts < required_bursts:
+		failures.append("burst-inside: only %d bursts fired (need at least %d)" % [
+			bursts, required_bursts])
+	if bool(facts.get("boss_defeated", false)) and int(facts.get("boss_health", -1)) > 0:
+		failures.append("completion: the boss must reach zero health before the map completes")
+	return failures
 
 
 func _demo_abort(extra: Array[String]) -> void:
@@ -760,15 +824,14 @@ func _finish_demo(extra: Array[String]) -> void:
 		player.demo_dir = Vector2.ZERO
 		player.demo_interact_held = false
 		player.demo_attack_pressed = false
-	var failures := evaluate_map_stage(_demo_facts())
-	if _bursts < 3:
-		failures.append("burst-inside: only %d bursts fired (need at least 3)" % _bursts)
+	var failures := evaluate_demo(_demo_facts())
 	for f in extra:
 		failures.append(f)
 	for f in failures:
 		print(log_prefix(), " FAILED: ", f)
 	print(log_prefix(), " demo: evolved=", player != null and player.evolved,
 		" defeated=", boss_defeated, " bursts=", _bursts,
+		" boss_health=", int(boss.get("health")) if boss != null else -1,
 		" nutrition=", float(player.nutrition) if player != null else -1.0)
 	print(result_line(failures.is_empty()))
 	get_tree().quit(0 if failures.is_empty() else 1)

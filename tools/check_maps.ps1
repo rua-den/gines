@@ -221,6 +221,20 @@ if (Test-Path -LiteralPath $runtimePath03 -PathType Leaf) {
 }
 Check (($canonicalHash03 -ne '') -and ($canonicalHash03 -eq $runtimeHash03)) 'map03.json' 'runtime map copy drifted from canonical'
 
+# Runtime copy drift guard: game/resources/maps/map02.json is a generated copy
+# of the canonical docs/maps/map02.json. Read-only — never rewrites the copy.
+$canonicalPath02 = Join-Path $root 'docs/maps/map02.json'
+$runtimePath02 = Join-Path $root 'game/resources/maps/map02.json'
+$canonicalHash02 = ''
+$runtimeHash02 = ''
+if (Test-Path -LiteralPath $canonicalPath02 -PathType Leaf) {
+	$canonicalHash02 = (Get-FileHash -LiteralPath $canonicalPath02 -Algorithm SHA256).Hash
+}
+if (Test-Path -LiteralPath $runtimePath02 -PathType Leaf) {
+	$runtimeHash02 = (Get-FileHash -LiteralPath $runtimePath02 -Algorithm SHA256).Hash
+}
+Check (($canonicalHash02 -ne '') -and ($canonicalHash02 -eq $runtimeHash02)) 'map02.json' 'runtime map copy drifted from canonical'
+
 if ($script:errors.Count -gt 0) {
 	foreach ($failure in $script:errors) {
 		Write-Output "[FAIL] $failure"
