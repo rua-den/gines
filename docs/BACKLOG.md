@@ -1,7 +1,7 @@
 # GENESIS — Initial Backlog
 
-**Current phase:** Phase 2 — Evolution & combat prototype (M4 energy loop automated; owner feel check open)
-**Next implementation target:** Owner playtest of the M4 energy loop, then define remaining Phase 2 scope
+**Current phase:** Phase 4 map-runtime prototype (Phase 2 automated evidence observed; M4/M5 owner feel checks still Open)
+**Next implementation target:** Make maps 02–08 runnable one at a time, each with a headless test that exercises the full map, then push. No art direction or milestone PASS is claimed by this work.
 **Planning note:** These are ordered work items, not calendar deadlines.  
 **Milestone decisions:** recorded in [`MILESTONES.md`](MILESTONES.md) — a checked box is not a milestone PASS.
 

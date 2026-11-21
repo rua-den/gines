@@ -254,6 +254,15 @@ is a **Proposed** placeholder for `the_drifter` (not an approved enemy or final
 art) following the map data's `fallback_until_implemented` field. This is a
 runtime prototype, not a milestone PASS, and implies no art approval.
 
+```powershell
+# Play map01 from the JSON-driven runner
+& $godot --path game res://scenes/map_runner.tscn
+
+# Headless: map data contract and map runner rules
+& $godot --headless --audio-driver Dummy --path game --script res://tests/map_runner_check.gd
+pwsh -File tools/check_maps.ps1
+```
+
 ## Layout
 
 ```text

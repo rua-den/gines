@@ -1,7 +1,7 @@
 extends SceneTree
 ## Headless rule check for the JSON-driven map runner (map01 only).
 ##
-## Eight named cases. Each case pairs the runner's pure evaluate_map_run()
+## Nine named cases. Each case pairs the runner's pure evaluate_map_run()
 ## contract with a real assertion on the instanced scene or on the map files,
 ## so a runner that only implements the evaluator but never builds the scene
 ## cannot pass. Several cases feed VIOLATING facts (so deleting a named rule

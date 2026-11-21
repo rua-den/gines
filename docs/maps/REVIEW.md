@@ -12,7 +12,7 @@ Every map remains **Proposed**; production scope is unchanged.
 Command: `pwsh -NoProfile -File tools/check_maps.ps1`
 
 ```text
-MAP CHECK PASSED - 8 maps, 532 checks
+MAP CHECK PASSED - 8 maps, 533 checks
 exit=0
 ```
 
@@ -85,7 +85,7 @@ an observed automated PASS with its human feel check open
 
 | Command | Observed result |
 |---|---|
-| `pwsh -NoProfile -File tools/check_maps.ps1` | `MAP CHECK PASSED - 8 maps, 532 checks`, exit 0 |
+| `pwsh -NoProfile -File tools/check_maps.ps1` | `MAP CHECK PASSED - 8 maps, 533 checks`, exit 0 |
 | 9 negative fixtures | all exit 1 with named failures |
 | `pwsh -File harness/scripts/check.ps1` | `HARNESS CHECK PASSED: 65 checks`, exit 0 |
 | `git status` | no `game/` changes |

@@ -1,4 +1,4 @@
-# GENESIS — one-command verification for Milestones 0/1/2/5.
+# GENESIS — one-command verification for M0–M5 plus the region slice and map runner.
 #
 # Runs the import prerequisite, the headless smoke checks (M0/M1/M2/M5), the
 # headless regression checks and the windowed demos (M1/M2/M3/M5), then reports
