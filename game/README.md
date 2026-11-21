@@ -280,6 +280,14 @@ implemented abilities; its planned boss `the_gnawer` has no `built_from` and use
 the labeled BloomBoss **Proposed placeholder**, and no milestone PASS or art
 approval is implied.
 
+`res://scenes/map07.tscn` ("The Neural Bloom") is runnable: its `double_jump`,
+`glide` and `chemical_veil` grants are planned-only and load just as explicitly
+acknowledged **planned-grant placeholders** (fallback: swim/grip/burst) — not
+implemented abilities; its planned boss `the_sentinel` has no `built_from` and
+uses the labeled BloomBoss **Proposed placeholder**, the sensor tripwire band is
+an inert slab because tracking damage is still Open, and no milestone PASS or
+art approval is implied.
+
 ```powershell
 # Play map01 from the JSON-driven runner
 & $godot --path game res://scenes/map_runner.tscn

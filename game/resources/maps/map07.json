@@ -1,0 +1,112 @@
+{
+  "artifact_type": "design_only",
+  "schema_version": 1,
+  "id": "map07",
+  "stage": 7,
+  "name": "The Neural Bloom",
+  "developmental_beat": "Senses and coordination: the body reads its surroundings before moving.",
+  "plan_refs": [
+    "GAME_DESIGN_FOUNDATION.md §7 (double-jump, gliding, biological powers, hiding)",
+    "DEVELOPMENT_PLAN.md §5 (equipped parts, multiple viable builds)"
+  ],
+  "room": {
+    "width": 1920,
+    "height": 1080,
+    "coordinate_space": "design_only"
+  },
+  "obstacles": [
+    {
+      "id": "neural_floor",
+      "kind": "static_slab",
+      "rect": [0, 980, 1920, 100],
+      "role": "floor",
+      "engine_status": "implemented"
+    },
+    {
+      "id": "neural_ceiling",
+      "kind": "static_slab",
+      "rect": [0, 0, 1920, 60],
+      "role": "ceiling",
+      "engine_status": "implemented"
+    },
+    {
+      "id": "tall_shaft_wall",
+      "kind": "static_slab",
+      "rect": [820, 380, 70, 600],
+      "role": "shaft wall whose ledge needs a second jump",
+      "engine_status": "implemented"
+    },
+    {
+      "id": "upper_ledge",
+      "kind": "static_slab",
+      "rect": [890, 340, 380, 40],
+      "role": "upper ledge reached by double-jump",
+      "engine_status": "implemented"
+    },
+    {
+      "id": "sensor_tripwire_band",
+      "kind": "hazard_zone",
+      "rect": [1320, 560, 520, 80],
+      "role": "tracking beam; either hidden with the veil or crossed by gliding above it",
+      "engine_status": "planned",
+      "fallback_until_implemented": "Use a static slab as a line-of-sight blocker until tracking damage is built."
+    }
+  ],
+  "upgrade": {
+    "id": "double_jump_glide",
+    "grants": ["double_jump", "glide", "chemical_veil"],
+    "name": "Coordination — double-jump, glide, optional veil",
+    "plan_ref": "GAME_DESIGN_FOUNDATION.md §7 later game; §5 build variety",
+    "permanent": true,
+    "additive": true,
+    "capacity": { "equipped_limit": null, "status": "Open" },
+    "engine_status": "planned",
+    "softlock_fallback": "The veil is optional: every sensor route can also be crossed by glide or by the upper ledge.",
+    "fallback_until_implemented": "Use grip routes and the existing spike burst until the traversal upgrades are built.",
+    "note": "All three parts are owned; the veil is a solution, not a mandatory key."
+  },
+  "boss": {
+    "id": "the_sentinel",
+    "name": "The Sentinel",
+    "kind": "hostile_organism",
+    "engine_status": "planned",
+    "loop": "Tracks the player's position and fires when the tracking beam locks on.",
+    "weak_window": "1.5 s while its sensor iris recalibrates after firing.",
+    "gate_requires": ["spike_ring"],
+    "retry_rule": "shelter",
+    "softlock_fallback": "Two independent solutions exist: hide with the veil or break line of sight by gliding; the spike burst always damages the iris.",
+    "fallback_until_implemented": "Use the Rot Bloom telegraph loop until the tracking beam is built.",
+    "solution": "Hide or glide out of the beam, then burst the recalibrating iris."
+  },
+  "deferred_world_fields": {
+    "visual_identity": { "value": null, "status": "Open" },
+    "secrets": { "entries": [], "status": "Open" },
+    "return_signals": { "entries": [], "status": "Open" },
+    "narrative_discoveries": { "entries": [], "status": "Open" }
+  },
+  "checkpoint": {
+    "kind": "shelter",
+    "position": [300, 520]
+  },
+  "resources": {
+    "model": "single_nutrition",
+    "meter_count": 1,
+    "sources": ["nutrient motes", "secret alcoves"],
+    "future_resource": {
+      "name": "genetic material",
+      "status": "Open",
+      "note": "Trait flavour only; no traits or second meter are implemented here."
+    }
+  },
+  "narrative": {
+    "mother_role": "guide_only",
+    "beat": "A voice, distorted by fluid, seems to encourage movement; it is still unidentified."
+  },
+  "progression": {
+    "model": "illustrative_linear",
+    "entry_requires": "map06.boss_defeated",
+    "exit_unlocks": "map08"
+  },
+  "stage_status": "planned",
+  "status": "Proposed"
+}
