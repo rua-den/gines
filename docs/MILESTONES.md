@@ -83,6 +83,11 @@ Screenshots are committed under `creative/muse/outputs/experiments/`:
   - Input is centralised in `project.godot`; code uses action names only.
 - **Open items:** gamepad bindings are defined but untested (no controller on
   the build machine) — carried into the M1 human check.
+- **Test-coverage note (2026-11-21 QA audit):** scaling was verified visually by
+  the owner and three committed screenshots; there is **no automated assertion**
+  of viewport 960×540 / `canvas_items` / `expand` in `tools/verify.ps1`. Deferred
+  as low impact — no player-facing defect observed — but a future display-setting
+  change could break scaling while CI stays green.
 
 ## Milestone 1 — Player movement
 

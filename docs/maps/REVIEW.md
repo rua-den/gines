@@ -92,7 +92,7 @@ an observed automated PASS with its human feel check open
 |---|---|
 | `pwsh -NoProfile -File tools/check_maps.ps1` | `MAP CHECK PASSED - 9 maps, 614 checks`, exit 0 |
 | `pwsh -NoProfile -File tools/check_maps_negative.ps1` | `MAP NEGATIVE PASSED — 9 fixtures failed as named`, exit 0 (retained, reproducible) |
-| map09 runtime-copy drift control | exit 1 with `[map09.json] runtime map copy drifted from canonical`; restored copy re-passes |
+| map09 runtime-copy drift guard | code at `tools/check_maps.ps1:320`; historically observed by mutating the runtime copy then restoring it byte-exactly. Not retained as a fixture — unlike the nine schema rules above |
 | `pwsh -File harness/scripts/check.ps1` | `HARNESS CHECK PASSED: 65 checks`, exit 0 |
 | `git status` | clean; map runtime scenes/scripts are committed implementation, not milestone decisions |
 
