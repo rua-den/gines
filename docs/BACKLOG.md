@@ -1,8 +1,9 @@
 # GENESIS — Initial Backlog
 
-**Current phase:** Phase 4 map-runtime prototype (Phase 2 automated evidence observed; M4/M5 owner feel checks still Open)
-**Status:** All eight maps now have runnable scenes and per-map full-map tests (verify 42 checks, checker 540, harness 65). Planned abilities/bosses/finale load as explicitly labeled Proposed placeholders with documented fallbacks.
-**Next implementation target:** Owner playtest of M4/M5 and a decision on region identity, approved art and the birth cinematic. No art direction or milestone PASS is claimed by the map-runtime work.
+**Current phase:** Phase 4 map-runtime prototype with a player-facing entry point (Phase 2 automated evidence observed; M4/M5 owner feel checks still Open)
+**Status:** All eight maps have runnable scenes and per-map full-map tests; a procedural Main Menu is the default scene (Title → Main → Map Select → stage). Verified: 44 checks (33 with `-SkipDemo`), checker 540, harness 65. Planned abilities/bosses/finale load as explicitly labeled Proposed placeholders with documented fallbacks.
+**Creative track:** `CHR-001` protagonist evolution exploration is saved under `creative/muse/outputs/character/` with brief, prompt and note; status Exploration, no approved direction.
+**Next implementation target:** Owner playtest of M4/M5 and a decision on region identity, approved art and the birth cinematic. No art direction or milestone PASS is claimed by the map-runtime or menu work.
 **Planning note:** These are ordered work items, not calendar deadlines.  
 **Milestone decisions:** recorded in [`MILESTONES.md`](MILESTONES.md) — a checked box is not a milestone PASS.
 
