@@ -449,7 +449,8 @@ func _case_completion_marker() -> void:
 	if boss != null:
 		boss.phase = "exposed"
 		boss.call("take_damage", BloomBoss.MAX_HEALTH)
-	await _frames(2)
+	# BloomBoss emits `defeated` synchronously; MapStage handles it in the same
+	# call, so poll immediately instead of racing frame scheduling under load.
 	var defeated: bool = bool(_stage.get("boss_defeated")) if _stage != null else false
 	var markers := 0
 	if _stage != null:
