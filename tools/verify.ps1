@@ -76,6 +76,7 @@ try {
     Invoke-Check "M5 smoke: boss arena loads" @("--headless", "--audio-driver", "Dummy", "--path", "game", "res://scenes/boss_test.tscn", "--quit-after", "5", "--", "--fresh-save") '\[M5\] READY' | Out-Null
     Invoke-Check "map03 smoke: stage scene loads" @("--headless", "--audio-driver", "Dummy", "--path", "game", "res://scenes/map03.tscn", "--quit-after", "5") '\[MAP03\] READY map03' | Out-Null
     Invoke-Check "map02 smoke: stage scene loads" @("--headless", "--audio-driver", "Dummy", "--path", "game", "res://scenes/map02.tscn", "--quit-after", "5") '\[MAP02\] READY map02' | Out-Null
+    Invoke-Check "map01 smoke: stage scene loads" @("--headless", "--audio-driver", "Dummy", "--path", "game", "res://scenes/map01.tscn", "--quit-after", "5") '\[MAP01\] READY map01' | Out-Null
     Invoke-Check "map04 smoke: stage scene loads" @("--headless", "--audio-driver", "Dummy", "--path", "game", "res://scenes/map04.tscn", "--quit-after", "5") '\[MAP04\] READY map04' | Out-Null
     Invoke-Check "map05 smoke: stage scene loads" @("--headless", "--audio-driver", "Dummy", "--path", "game", "res://scenes/map05.tscn", "--quit-after", "5") '\[MAP05\] READY map05' | Out-Null
     Invoke-Check "map06 smoke: stage scene loads" @("--headless", "--audio-driver", "Dummy", "--path", "game", "res://scenes/map06.tscn", "--quit-after", "5") '\[MAP06\] READY map06' | Out-Null
@@ -95,6 +96,7 @@ try {
     Invoke-Check "regression: M5 demo verdict can fail" @("--headless", "--audio-driver", "Dummy", "--path", "game", "--script", "res://tests/m5_verdict_check.gd") 'ALL PASS' | Out-Null
     Invoke-Check "regression: region slice rules" @("--headless", "--audio-driver", "Dummy", "--path", "game", "--script", "res://tests/region_slice_check.gd") 'ALL PASS' | Out-Null
     Invoke-Check "regression: map runner rules" @("--headless", "--audio-driver", "Dummy", "--path", "game", "--script", "res://tests/map_runner_check.gd") 'ALL PASS' | Out-Null
+    Invoke-Check "regression: map01 stage rules" @("--headless", "--audio-driver", "Dummy", "--path", "game", "--script", "res://tests/map01_check.gd") 'ALL PASS' | Out-Null
     Invoke-Check "regression: map03 stage rules" @("--headless", "--audio-driver", "Dummy", "--path", "game", "--script", "res://tests/map03_check.gd") 'ALL PASS' | Out-Null
     Invoke-Check "regression: map02 stage rules" @("--headless", "--audio-driver", "Dummy", "--path", "game", "--script", "res://tests/map02_check.gd") 'ALL PASS' | Out-Null
     Invoke-Check "regression: map04 stage rules" @("--headless", "--audio-driver", "Dummy", "--path", "game", "--script", "res://tests/map04_check.gd") 'ALL PASS' | Out-Null
@@ -103,6 +105,8 @@ try {
     Invoke-Check "regression: map07 stage rules" @("--headless", "--audio-driver", "Dummy", "--path", "game", "--script", "res://tests/map07_check.gd") 'ALL PASS' | Out-Null
     Invoke-Check "regression: map08 stage rules" @("--headless", "--audio-driver", "Dummy", "--path", "game", "--script", "res://tests/map08_check.gd") 'ALL PASS' | Out-Null
     Invoke-Check "regression: map09 stage rules" @("--headless", "--audio-driver", "Dummy", "--path", "game", "--script", "res://tests/map09_check.gd") 'ALL PASS' | Out-Null
+
+    Invoke-Check "map01 demo autopilot (feed/evolve/slab/boss/completion)" @("--headless", "--audio-driver", "Dummy", "--path", "game", "res://scenes/map01.tscn", "--", "--map01-demo") 'MAP01 RESULT: PASS' | Out-Null
 
     if ($SkipDemo) {
         Write-Host "[SKIP] M1 demo autopilot (-SkipDemo)"

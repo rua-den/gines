@@ -13,7 +13,7 @@ extends SceneTree
 ##     --script res://tests/map03_check.gd
 ## Exit code 0 = all cases pass, 1 = at least one failure.
 
-const EXPECTED_CASES := 17
+const EXPECTED_CASES := 18
 const MAP_RES := "res://resources/maps/map03.json"
 const STAGE_SCENE := "res://scenes/map03.tscn"
 const EXPECTED_ID := "map03"
@@ -135,6 +135,18 @@ func _room_rect(data: Dictionary) -> Rect2:
 func _within(rect: Rect2, point: Vector2) -> bool:
 	return point.x >= rect.position.x and point.y >= rect.position.y \
 		and point.x <= rect.end.x and point.y <= rect.end.y
+
+
+## Finds the shared procedural backdrop's CanvasLayer, nested under a plain
+## node so the actor-count cases still see exactly one direct HUD CanvasLayer.
+func _find_background_layer(node: Node) -> CanvasLayer:
+	if node is CanvasLayer and (node as CanvasLayer).layer == -2:
+		return node as CanvasLayer
+	for child in node.get_children():
+		var found := _find_background_layer(child)
+		if found != null:
+			return found
+	return null
 
 
 ## Put the stage player in burst range of the boss with a ready body.
@@ -557,6 +569,33 @@ func _case_same_frame_rebuild_has_no_duplicates() -> void:
 			first, second, players, cameras, zones, huds, bosses])
 
 
+func _case_background_is_procedural() -> void:
+	# Shared MapStage code: removing _build_background() must fail this case.
+	var layer := _find_background_layer(_stage) if _stage != null else null
+	var base_count := 0
+	var gradient_count := 0
+	if layer != null:
+		for child in layer.get_children():
+			if child is ColorRect:
+				base_count += 1
+			elif child is Sprite2D:
+				if (child as Sprite2D).texture is GradientTexture2D:
+					gradient_count += 1
+			elif child is TextureRect:
+				if (child as TextureRect).texture is GradientTexture2D:
+					gradient_count += 1
+	var hud_layer_ok := false
+	if _stage != null:
+		for node in _stage.find_children("*", "CanvasLayer", true, false):
+			if (node as CanvasLayer).layer == 10:
+				hud_layer_ok = true
+				break
+	var ok: bool = layer != null and base_count >= 1 and gradient_count >= 2 and hud_layer_ok
+	_check("procedural gradient background sits behind gameplay", ok,
+		"layer=%s base=%d gradients=%d hud=%s" % [
+			"layer=-2" if layer != null else "<none>", base_count, gradient_count, hud_layer_ok])
+
+
 # ------------------------------------------------------------------- entry
 
 func _init() -> void:
@@ -581,6 +620,7 @@ func _init() -> void:
 	await _case_unknown_json_key_rejected()
 	await _case_note_annotation_is_accepted()
 	await _case_same_frame_rebuild_has_no_duplicates()
+	await _case_background_is_procedural()
 	if _stage != null and is_instance_valid(_stage):
 		_stage.queue_free()
 	await _frames(2)

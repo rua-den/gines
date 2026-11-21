@@ -20,7 +20,7 @@ const MAP_DIR := "res://resources/maps/"
 const PLAYER_SCENE := "res://scenes/player.tscn"
 ## Capability whitelists: declarations of what this build can execute, not
 ## per-map requirements. Adding an id here is an honest feature flag.
-const SUPPORTED_MAP_IDS := ["map03", "map02", "map04", "map05", "map06", "map07", "map08", "map09"]
+const SUPPORTED_MAP_IDS := ["map01", "map03", "map02", "map04", "map05", "map06", "map07", "map08", "map09"]
 ## map04's planned `the_pulse_maw` and map05's planned `the_vine_lash` are
 ## deliberately NOT whitelisted: neither has a built_from, so their documented
 ## Rot Bloom fallbacks resolve to the labeled BloomBoss placeholder (Proposed,
@@ -81,6 +81,21 @@ const HAZARD_FILL := Color(0.28, 0.24, 0.10, 0.92)
 const HAZARD_EDGE := Color(0.95, 0.78, 0.31)
 const HUD_TEAL := Color(0.56, 0.96, 0.89)
 const HUD_GOLD := Color(0.95, 0.76, 0.31)
+## Procedural background palette. A tint per map keeps regions from looking
+## identical without any authored asset. Exploration only — no approved art.
+const BACKGROUND_BASE := Color(0.02, 0.05, 0.07)
+const BACKGROUND_DEFAULT_TINT := Color(0.16, 0.30, 0.32)
+const BACKGROUND_TINTS := {
+	"map01": Color(0.12, 0.36, 0.32),
+	"map02": Color(0.32, 0.16, 0.38),
+	"map03": Color(0.42, 0.30, 0.10),
+	"map04": Color(0.36, 0.14, 0.18),
+	"map05": Color(0.16, 0.34, 0.20),
+	"map06": Color(0.14, 0.26, 0.42),
+	"map07": Color(0.30, 0.22, 0.40),
+	"map08": Color(0.40, 0.22, 0.14),
+	"map09": Color(0.34, 0.34, 0.12),
+}
 
 @export var map_id: String = "map03"
 ## Per-map placement/copy. Defaults match the original map03 layout; each thin
@@ -455,6 +470,7 @@ func _clear_built() -> void:
 
 func _build_all(data: Dictionary) -> void:
 	_clear_built()
+	_build_background()
 	_build_slabs(data)
 	_build_player(data)
 	_build_motes()
@@ -462,6 +478,77 @@ func _build_all(data: Dictionary) -> void:
 	_build_boss(data)
 	_build_camera()
 	_build_hud()
+
+
+# -------------------------------------------------------------- background
+
+## Builds a gradient texture with no assets. Stops is [offset, Color] pairs.
+func _gradient_texture(stops: Array, radial: bool) -> GradientTexture2D:
+	var grad := Gradient.new()
+	grad.set_color(0, stops[0][1])
+	grad.set_color(1, stops[stops.size() - 1][1])
+	for i in range(1, stops.size() - 1):
+		grad.add_point(stops[i][0], stops[i][1])
+	var tex := GradientTexture2D.new()
+	tex.gradient = grad
+	tex.width = 256
+	tex.height = 256
+	if radial:
+		tex.fill = GradientTexture2D.FILL_RADIAL
+		tex.fill_from = Vector2(0.5, 0.5)
+		tex.fill_to = Vector2(0.5, 1.0)
+	else:
+		tex.fill = GradientTexture2D.FILL_LINEAR
+		tex.fill_from = Vector2(0.0, 0.5)
+		tex.fill_to = Vector2(1.0, 0.5)
+	return tex
+
+
+## One shared procedural backdrop for every map. It lives under a plain node so
+## actor/count checks on direct children still see exactly one HUD CanvasLayer.
+## The CanvasLayer sits at -2, behind the default gameplay canvas and the HUD.
+func _build_background() -> void:
+	var old := get_node_or_null("Backdrop")
+	if old != null:
+		_dispose(old)
+	var backdrop := Node2D.new()
+	backdrop.name = "Backdrop"
+	add_child(backdrop)
+	var layer := CanvasLayer.new()
+	layer.name = "BackgroundLayer"
+	layer.layer = -2
+	backdrop.add_child(layer)
+	var tint: Color = BACKGROUND_TINTS.get(map_id, BACKGROUND_DEFAULT_TINT)
+	var base := ColorRect.new()
+	base.color = BACKGROUND_BASE
+	base.set_anchors_preset(Control.PRESET_FULL_RECT)
+	base.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	layer.add_child(base)
+	# Three sparse radial glows. Low opacity keeps gameplay reading first.
+	var blobs: Array = [
+		[Vector2(420, 320), 2.4, Color(tint.r, tint.g, tint.b, 0.42)],
+		[Vector2(1250, 260), 2.0, Color(tint.r * 0.7, minf(tint.g * 1.15, 1.0), tint.b, 0.32)],
+		[Vector2(1650, 760), 2.2, Color(minf(tint.r * 1.2, 1.0), tint.g * 0.6, tint.b, 0.28)],
+	]
+	for def in blobs:
+		var blob := Sprite2D.new()
+		blob.texture = _gradient_texture([
+			[0.0, def[2]],
+			[1.0, Color(def[2].r, def[2].g, def[2].b, 0.0)],
+		], true)
+		blob.position = def[0]
+		blob.scale = Vector2(def[1], def[1])
+		layer.add_child(blob)
+	# A soft horizontal band separates the upper chamber from the lower one.
+	var band := Sprite2D.new()
+	band.texture = _gradient_texture([
+		[0.0, Color(tint.r, tint.g, tint.b, 0.0)],
+		[0.5, Color(tint.r, tint.g, tint.b, 0.16)],
+		[1.0, Color(tint.r, tint.g, tint.b, 0.0)],
+	], false)
+	band.position = Vector2(960, 540)
+	band.scale = Vector2(14.0, 0.7)
+	layer.add_child(band)
 
 
 func _build_slabs(data: Dictionary) -> void:

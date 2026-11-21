@@ -23,10 +23,11 @@ const MAIN_ENTRIES: Array[String] = ["New Game", "Continue", "Map Select", "Quit
 
 ## Honest status markers: "code exists", "placeholder", "proposed placeholder".
 ## Never "Approved" or "final" — no art/design direction is approved here.
-## map01 is run through the JSON-driven map_runner.tscn; there is no map01.tscn.
+## map01 is a full-loop MapStage scene (map01.tscn); map_runner.tscn stays as the
+## JSON data-path proof but is no longer the menu's map01 entry.
 const MAP_ENTRIES: Array[Dictionary] = [
 	{"name": "Region Slice", "path": "res://scenes/region_slice.tscn", "status": "code exists"},
-	{"name": "map01", "path": "res://scenes/map_runner.tscn", "status": "code exists"},
+	{"name": "map01", "path": "res://scenes/map01.tscn", "status": "code exists"},
 	{"name": "map02", "path": "res://scenes/map02.tscn", "status": "proposed placeholder"},
 	{"name": "map03", "path": "res://scenes/map03.tscn", "status": "code exists"},
 	{"name": "map04", "path": "res://scenes/map04.tscn", "status": "proposed placeholder"},

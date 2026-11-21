@@ -21,11 +21,11 @@ const EXPECTED_CASES := 12
 # Region Slice + map01..map09 = 10 entries.
 const EXPECTED_MAP_COUNT := 10
 
-# Ten paths exist today: region_slice, the map01 JSON runner, and map02..map09.
-# map01 routes to the JSON runner because no map01.tscn exists.
+# Ten paths exist today: region_slice, the full-loop map01 stage, and map02..map09.
+# map_runner.tscn remains the JSON data-path proof but is not a menu entry.
 const EXPECTED_PATHS: Array[String] = [
 	"res://scenes/region_slice.tscn",
-	"res://scenes/map_runner.tscn",
+	"res://scenes/map01.tscn",
 	"res://scenes/map02.tscn",
 	"res://scenes/map03.tscn",
 	"res://scenes/map04.tscn",
@@ -217,7 +217,7 @@ func _case_selecting_entry_requests_scene() -> void:
 	menu.on_interact()
 	var second: String = menu.last_scene_request
 	var ok: bool = first == "res://scenes/region_slice.tscn" \
-		and second == "res://scenes/map_runner.tscn"
+		and second == "res://scenes/map01.tscn"
 	_check("selecting an entry emits the scene request", ok,
 		"first=%s second=%s" % [first, second])
 	await _dispose(menu)
