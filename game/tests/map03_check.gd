@@ -13,7 +13,7 @@ extends SceneTree
 ##     --script res://tests/map03_check.gd
 ## Exit code 0 = all cases pass, 1 = at least one failure.
 
-const EXPECTED_CASES := 16
+const EXPECTED_CASES := 17
 const MAP_RES := "res://resources/maps/map03.json"
 const STAGE_SCENE := "res://scenes/map03.tscn"
 const EXPECTED_ID := "map03"
@@ -270,6 +270,23 @@ func _case_boss_is_bloom() -> void:
 		"boss_id=%s boss=%s health=%s" % [boss_id,
 			boss.get_script().get_global_name() if boss != null and boss.get_script() != null else "<none>",
 			boss.get("health") if boss != null else "?"])
+
+
+func _case_boss_hud_shows_real_max_health() -> void:
+	var p: Node = _stage.get("player") if _stage != null else null
+	var boss: Node = _stage.get("boss") if _stage != null else null
+	var hud: Node = _stage.get("hud_status") if _stage != null else null
+	var text := ""
+	if p != null and boss != null and hud != null:
+		p.set("evolved", true)
+		boss.call("reset")
+		_stage.call("_update_hud")
+		text = str(hud.get("text"))
+	var expected := "Bloom %d/%d" % [int(boss.get("health")), int(boss.call("max_health"))] \
+		if boss != null and boss.has_method("max_health") else ""
+	var ok: bool = expected != "" and text.contains(expected) and text.contains("/6")
+	_check("Boss HUD uses the boss's real max health", ok,
+		"hud='%s' expected='%s'" % [text, expected])
 
 
 func _case_burst_window() -> void:
@@ -553,6 +570,7 @@ func _init() -> void:
 	await _case_motes_and_zone()
 	await _case_gate_closed_then_open()
 	await _case_boss_is_bloom()
+	await _case_boss_hud_shows_real_max_health()
 	await _case_burst_window()
 	await _case_completion_marker()
 	await _case_retry_preserves_progress()

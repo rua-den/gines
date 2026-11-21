@@ -60,6 +60,12 @@ func phase_name() -> String:
 	return phase
 
 
+## Exposed so the stage HUD can show a boss's real maximum. FinalBoss overrides
+## this with its larger pool; subclasses must keep this contract.
+func max_health() -> int:
+	return MAX_HEALTH
+
+
 func is_vulnerable() -> bool:
 	return phase == "exposed" and not is_defeated
 
