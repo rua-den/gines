@@ -1,7 +1,7 @@
 extends SceneTree
 ## Headless rule check for the parameterized map02 stage ("The Divide").
 ##
-## Sixteen named cases, mirroring map03_check.gd. Each case pairs the stage's
+## Nineteen named cases, mirroring map03_check.gd. Each case pairs the stage's
 ## pure evaluate_map_stage() contract with a real assertion on the instanced
 ## scene or on the map files. map02 differs from map03 in three honest ways:
 ##   - all four obstacles are static_slab (there is NO gate obstacle), so the
