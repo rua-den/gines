@@ -1,0 +1,108 @@
+{
+  "artifact_type": "design_only",
+  "schema_version": 1,
+  "id": "map04",
+  "stage": 4,
+  "name": "The Pulse",
+  "developmental_beat": "Rhythm and restraint: the body learns to spend and recover effort.",
+  "plan_refs": [
+    "GAME_DESIGN_FOUNDATION.md §7 (special abilities may consume energy)",
+    "MILESTONES.md M4 (energy for the burst)"
+  ],
+  "room": {
+    "width": 1920,
+    "height": 1080,
+    "coordinate_space": "design_only"
+  },
+  "obstacles": [
+    {
+      "id": "floor_membrane",
+      "kind": "static_slab",
+      "rect": [0, 980, 1920, 100],
+      "role": "floor — crawl surface",
+      "engine_status": "implemented"
+    },
+    {
+      "id": "upper_membrane",
+      "kind": "static_slab",
+      "rect": [0, 0, 1920, 60],
+      "role": "ceiling",
+      "engine_status": "implemented"
+    },
+    {
+      "id": "pulse_membrane_a",
+      "kind": "static_slab",
+      "rect": [640, 420, 60, 560],
+      "role": "membrane wall; its gap is readable but not physically moving",
+      "engine_status": "implemented"
+    },
+    {
+      "id": "pulse_membrane_b",
+      "kind": "static_slab",
+      "rect": [1320, 60, 60, 520],
+      "role": "second membrane wall forcing a bend",
+      "engine_status": "implemented"
+    },
+    {
+      "id": "rhythm_hazard",
+      "kind": "hazard_zone",
+      "rect": [700, 700, 620, 120],
+      "role": "timed damage band between the membranes",
+      "engine_status": "planned",
+      "fallback_until_implemented": "Treat the band as inert wall geometry until timed damage is built."
+    }
+  ],
+  "upgrade": {
+    "id": "energy_pool",
+    "grants": ["energy_pool"],
+    "name": "Energy for the burst",
+    "plan_ref": "GAME_DESIGN_FOUNDATION.md §7; MILESTONES.md M4",
+    "permanent": true,
+    "additive": true,
+    "capacity": { "equipped_limit": null, "status": "Open" },
+    "engine_status": "implemented",
+    "softlock_fallback": "Energy regenerates at 1/s with no pickups, so waiting always restores the burst.",
+    "fallback_until_implemented": null
+  },
+  "boss": {
+    "id": "the_pulse_maw",
+    "name": "The Pulse Maw",
+    "kind": "hostile_organism",
+    "engine_status": "planned",
+    "loop": "Fires in three-beat clusters, then must inhale before the next cluster.",
+    "weak_window": "1.4 s inhale after a cluster; bursts spent outside it are wasted.",
+    "gate_requires": ["energy_pool"],
+    "retry_rule": "shelter",
+    "softlock_fallback": "The Maw cannot be damaged while feeding, so no amount of stored energy can force the fight; health and energy refill at the shelter.",
+    "fallback_until_implemented": "Use the Rot Bloom's telegraph/exposed loop until the clustered attack is built.",
+    "solution": "Spend one energy per beat, then retreat through the membrane bend while it inhales."
+  },
+  "deferred_world_fields": {
+    "visual_identity": { "value": null, "status": "Open" },
+    "secrets": { "entries": [], "status": "Open" },
+    "return_signals": { "entries": [], "status": "Open" },
+    "narrative_discoveries": { "entries": [], "status": "Open" }
+  },
+  "checkpoint": {
+    "kind": "shelter",
+    "position": [300, 500]
+  },
+  "resources": {
+    "model": "single_nutrition",
+    "meter_count": 1,
+    "ability_pools": ["energy"],
+    "sources": ["nutrient motes"],
+    "future_resource": null
+  },
+  "narrative": {
+    "mother_role": "guide_only",
+    "beat": "The sparse heartbeat becomes a rhythm the player can time movements against; it is never a threat."
+  },
+  "progression": {
+    "model": "illustrative_linear",
+    "entry_requires": "map03.boss_defeated",
+    "exit_unlocks": "map05"
+  },
+  "stage_status": "partial",
+  "status": "Proposed"
+}

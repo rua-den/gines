@@ -259,6 +259,12 @@ parameterized stage: its planned boss `the_splitter` uses the documented
 `built_from: Predator` fallback and remains a **Proposed placeholder** (not an
 approved enemy or art), and there is no milestone PASS implied.
 
+`res://scenes/map04.tscn` ("The Pulse") is runnable too: its planned boss
+`the_pulse_maw` has no `built_from`, so it uses the documented Rot Bloom fallback
+as a clearly labeled BloomBoss **Proposed placeholder** (design-only, not an
+approved enemy or art), the hazard band is an inert slab because timed damage is
+still Open, and no milestone PASS is implied.
+
 ```powershell
 # Play map01 from the JSON-driven runner
 & $godot --path game res://scenes/map_runner.tscn

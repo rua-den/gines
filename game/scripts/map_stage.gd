@@ -20,7 +20,10 @@ const MAP_DIR := "res://resources/maps/"
 const PLAYER_SCENE := "res://scenes/player.tscn"
 ## Capability whitelists: declarations of what this build can execute, not
 ## per-map requirements. Adding an id here is an honest feature flag.
-const SUPPORTED_MAP_IDS := ["map03", "map02"]
+const SUPPORTED_MAP_IDS := ["map03", "map02", "map04"]
+## map04's planned `the_pulse_maw` is deliberately NOT whitelisted: it has no
+## built_from, so its documented Rot Bloom fallback resolves to the labeled
+## BloomBoss placeholder (Proposed, design-only) via _boss_kind()/_spawn_bloom().
 const SUPPORTED_BOSS_IDS := ["rot_bloom"]
 const SUPPORTED_BUILT_FROM := "Predator"
 const SUPPORTED_OBSTACLE_KINDS := ["static_slab", "gate", "hazard_zone"]
