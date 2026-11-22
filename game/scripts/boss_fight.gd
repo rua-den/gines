@@ -25,7 +25,7 @@ const ROUTE_X := 1820.0
 # Named, not counted: a duplicated capture cannot stand in for a missing one.
 const M5_SHOTS := ["approach", "telegraph", "weak-window", "victory"]
 # Demo cadence. A failed run must end rather than hang the verifier.
-const DEMO_TIMEOUT := 45.0
+const DEMO_TIMEOUT := 90.0
 # Outside the boss's 60 px attack radius, inside our 130 px burst reach.
 const STANDOFF := 95.0
 

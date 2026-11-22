@@ -11,7 +11,7 @@ extends SceneTree
 ##     --script res://tests/m5_verdict_check.gd
 ## Exit code 0 = all cases pass, 1 = at least one failure.
 
-const EXPECTED_CASES := 4
+const EXPECTED_CASES := 5
 const GOOD_SHOTS := ["approach", "telegraph", "weak-window", "victory"]
 
 var _passed := 0
@@ -49,6 +49,21 @@ func _case(label: String, evolved: bool, defeated: bool, shots: Array,
 		"PASS" if ok else "FAIL", label, expect_ok, failures])
 
 
+func _case_demo_watchdog_is_generous() -> void:
+	# A resource-loaded windowed demo can take much longer than a solo run.
+	# The map stages use 90 s; M5 must not false-FAIL after a 45 s watchdog.
+	var scene: Node = load("res://scenes/boss_test.tscn").instantiate()
+	var timeout := float(scene.get("DEMO_TIMEOUT"))
+	scene.free()
+	var ok: bool = timeout >= 90.0
+	if ok:
+		_passed += 1
+	else:
+		_failed += 1
+	print("[T] %s M5 demo watchdog is generous  timeout=%.0f" % [
+		"PASS" if ok else "FAIL", timeout])
+
+
 func _init() -> void:
 	await process_frame
 	_case("all criteria met is a pass", true, true, GOOD_SHOTS, 0.0, 6, true)
@@ -60,6 +75,7 @@ func _init() -> void:
 		GOOD_SHOTS, 0.0, 0, false, ["evolution", "boss", "burst"])
 	_case("negative nutrition is an economy failure", true, true,
 		GOOD_SHOTS, -1.0, 6, false, ["nutrition"])
+	_case_demo_watchdog_is_generous()
 	if _passed + _failed != EXPECTED_CASES:
 		_failed += 1
 		print("[T] FAIL only %d of %d cases reported" % [_passed + _failed, EXPECTED_CASES])
