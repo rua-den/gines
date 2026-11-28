@@ -93,12 +93,15 @@ func _run() -> void:
 
 	var menu := (load("res://scenes/main_menu.tscn") as PackedScene).instantiate()
 	root.add_child(menu)
-	var image := menu.get_node_or_null("GeneratedBackdrop") as TextureRect
+	var image := menu.get_node_or_null("MenuBackdrop/GeneratedBackdrop") as TextureRect
 	var desired := GenesisArt.texture("menu_backdrop")
 	if desired == null:
 		desired = GenesisArt.texture("world_backdrop")
+	await process_frame
 	_expect((image == null and desired == null) or (image != null and image.texture == desired
-		and image.mouse_filter == Control.MOUSE_FILTER_IGNORE), "menu backdrop or flat fallback")
+		and image.mouse_filter == Control.MOUSE_FILTER_IGNORE
+		and image.size.is_equal_approx(root.get_visible_rect().size)
+		and image.size.x > 0.0 and image.size.y > 0.0), "menu backdrop fills the viewport or uses flat fallback")
 	menu.free()
 
 	var map := (load("res://scenes/map03.tscn") as PackedScene).instantiate()
