@@ -1,0 +1,61 @@
+name: Genesis before and after
+on:
+  push:
+    branches: [dot/genesis-art-comparison]
+permissions:
+  contents: read
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      LIBGL_ALWAYS_SOFTWARE: '1'
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: e33a7b8d225829b0a28d818fbfbed1bdcae267a7
+          path: before
+          persist-credentials: false
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: db4ba1209610e7e73d550001415b924dc2b4a51a
+          path: after
+          persist-credentials: false
+      - name: Capture actual Godot windows at identical paths and camera coordinates
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y xvfb xauth python3-pil fonts-dejavu-core
+          zip="$RUNNER_TEMP/godot.zip"
+          curl --fail --silent --show-error --location --retry 3 https://github.com/godotengine/godot/releases/download/4.7.2-stable/Godot_v4.7.2-stable_linux.x86_64.zip -o "$zip"
+          printf '%s  %s\n' cadd3204e728a35d3f13adb7fd0d7902636b79f6b95c40c265eb73b6c35329e4 "$zip" | sha256sum -c
+          unzip -q "$zip" -d "$RUNNER_TEMP"
+          godot="$RUNNER_TEMP/Godot_v4.7.2-stable_linux.x86_64"
+          out="$RUNNER_TEMP/comparison"
+          mkdir -p "$out"
+          for version in before after; do
+            export XDG_CACHE_HOME="$RUNNER_TEMP/cache-$version"
+            export XDG_DATA_HOME="$RUNNER_TEMP/data-$version"
+            mkdir -p "$XDG_CACHE_HOME" "$XDG_DATA_HOME"
+            cp tools/compare_genesis_art.gd "$version/game/capture.gd"
+            "$godot" --headless --audio-driver Dummy --path "$version/game" --import
+            for moment in menu map01 bloom; do
+              xvfb-run -a -s '-screen 0 1920x1080x24' timeout 30s "$godot" --audio-driver Dummy --resolution 960x540 --path "$version/game" --script res://capture.gd -- "$moment" "$out/$version-$moment.png" | tee "$out/$version-$moment.log"
+              test -s "$out/$version-$moment.png"
+              grep -q "^CAPTURE: $moment " "$out/$version-$moment.log"
+            done
+          done
+          for moment in menu map01 bloom; do
+            diff -u <(grep '^CAPTURE:' "$out/before-$moment.log") <(grep '^CAPTURE:' "$out/after-$moment.log")
+          done
+          /usr/bin/python3 tools/compose_genesis_comparison.py "$out"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: genesis-before-after
+          path: ${{ runner.temp }}/comparison/
+          if-no-files-found: error
+          retention-days: 14
