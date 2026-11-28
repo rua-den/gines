@@ -49,19 +49,24 @@ func _case(label: String, evolved: bool, defeated: bool, shots: Array,
 		"PASS" if ok else "FAIL", label, expect_ok, failures])
 
 
-func _case_demo_watchdog_is_generous() -> void:
-	# A resource-loaded windowed demo can take much longer than a solo run.
-	# The map stages use 90 s; M5 must not false-FAIL after a 45 s watchdog.
+func _case_demo_watchdog_tracks_map_stage() -> void:
+	# Keep M5's failure watchdog at least as generous as the full map demos.
+	# Read both live script constants so a future cadence change cannot drift.
 	var scene: Node = load("res://scenes/boss_test.tscn").instantiate()
-	var timeout := float(scene.get("DEMO_TIMEOUT"))
+	var boss_script := scene.get_script() as GDScript
+	var boss_constants: Dictionary = boss_script.get_script_constant_map() if boss_script != null else {}
+	var boss_timeout := float(boss_constants.get("DEMO_TIMEOUT", 0.0))
+	var map_script := load("res://scripts/map_stage.gd") as GDScript
+	var map_constants: Dictionary = map_script.get_script_constant_map() if map_script != null else {}
+	var map_timeout := float(map_constants.get("DEMO_TIMEOUT", 0.0))
 	scene.free()
-	var ok: bool = timeout >= 90.0
+	var ok: bool = map_timeout > 0.0 and boss_timeout >= map_timeout
 	if ok:
 		_passed += 1
 	else:
 		_failed += 1
-	print("[T] %s M5 demo watchdog is generous  timeout=%.0f" % [
-		"PASS" if ok else "FAIL", timeout])
+	print("[T] %s M5 demo watchdog tracks map-stage watchdog  M5=%.0f map=%.0f" % [
+		"PASS" if ok else "FAIL", boss_timeout, map_timeout])
 
 
 func _init() -> void:
@@ -75,7 +80,7 @@ func _init() -> void:
 		GOOD_SHOTS, 0.0, 0, false, ["evolution", "boss", "burst"])
 	_case("negative nutrition is an economy failure", true, true,
 		GOOD_SHOTS, -1.0, 6, false, ["nutrition"])
-	_case_demo_watchdog_is_generous()
+	_case_demo_watchdog_tracks_map_stage()
 	if _passed + _failed != EXPECTED_CASES:
 		_failed += 1
 		print("[T] FAIL only %d of %d cases reported" % [_passed + _failed, EXPECTED_CASES])
