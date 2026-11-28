@@ -81,7 +81,7 @@ func _build_overlay() -> void:
 	style.border_color = OVERLAY_EDGE
 	style.set_border_width_all(2)
 	style.set_corner_radius_all(12)
-	panel.add_theme_stylebox_override("panel", style)
+	panel.add_theme_stylebox_override("panel", GenesisArt.panel_style(style))
 	layer.add_child(panel)
 	var label := Label.new()
 	label.name = "OverlayLabel"

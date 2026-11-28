@@ -15,7 +15,7 @@ const SLAB_EDGE := Color(0.56, 0.96, 0.89)
 ## Adds one solid, visible slab to [param parent]. The body, collision shape,
 ## polygon and top edge are created in the same order and with the same values
 ## as the original per-scene `_add_static_rect`.
-static func add_slab(parent: Node2D, rect: Rect2, color: Color, edge: Color) -> StaticBody2D:
+static func add_slab(parent: Node2D, rect: Rect2, color: Color, edge: Color, material_key := "stone") -> StaticBody2D:
 	var x0: float = rect.position.x
 	var y0: float = rect.position.y
 	var x1: float = rect.end.x
@@ -33,7 +33,16 @@ static func add_slab(parent: Node2D, rect: Rect2, color: Color, edge: Color) -> 
 	poly.polygon = PackedVector2Array([
 		Vector2(x0, y0), Vector2(x1, y0), Vector2(x1, y1), Vector2(x0, y1),
 	])
-	poly.color = color
+	var art := GenesisArt.texture(material_key)
+	if art != null:
+		poly.name = "GeneratedSurface"
+		poly.texture = art
+		poly.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
+		poly.uv = PackedVector2Array([
+			Vector2.ZERO, Vector2(rect.size.x, 0.0), rect.size, Vector2(0.0, rect.size.y),
+		])
+	else:
+		poly.color = color
 	body.add_child(poly)
 	var line := Line2D.new()
 	line.points = PackedVector2Array([Vector2(x0, y0), Vector2(x1, y0)])
@@ -61,7 +70,7 @@ static func build_room(parent: Node2D, room: Rect2, floor_top: float, extra_slab
 	# right wall
 	add_slab(parent, Rect2(room.end.x - 60.0, room.position.y, 60.0, room.size.y), SLAB, SLAB_EDGE)
 	# floating platform
-	add_slab(parent, Rect2(700.0, 640.0, 1200.0 - 700.0, 680.0 - 640.0), SLAB, SLAB_EDGE)
+	add_slab(parent, Rect2(700.0, 640.0, 1200.0 - 700.0, 680.0 - 640.0), SLAB, SLAB_EDGE, "growth")
 	# vertical pillar
 	add_slab(parent, Rect2(1400.0, 700.0, 1460.0 - 1400.0, floor_top - 700.0), SLAB, SLAB_EDGE)
 	for rect in extra_slabs:

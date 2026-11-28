@@ -54,6 +54,13 @@ func _ready() -> void:
 
 func _build_visual() -> void:
 	_body = Sprite2D.new()
+	var art := GenesisArt.texture("predator")
+	if art != null:
+		_body.name = "GeneratedBody"
+		_body.texture = art
+		_body.scale = GenesisArt.scale_for(art, RADIUS * 4.0)
+		add_child(_body)
+		return
 	var grad := Gradient.new()
 	grad.set_color(0, Color(0.95, 0.45, 0.38, 0.95))
 	grad.set_color(1, Color(0.45, 0.08, 0.12, 0.0))
@@ -66,7 +73,7 @@ func _build_visual() -> void:
 	tex.fill_from = Vector2(0.5, 0.5)
 	tex.fill_to = Vector2(0.5, 1.0)
 	_body.texture = tex
-	_body.scale = Vector2.ONE * (RADIUS / 32.0)
+	_body.scale = GenesisArt.scale_for(_body.texture, RADIUS * 4.0)
 	add_child(_body)
 
 
@@ -118,7 +125,7 @@ func _pulse(rate: float) -> void:
 	if _body == null:
 		return
 	var pulse := 0.94 + 0.06 * sin(_t * rate * TAU)
-	_body.scale = Vector2.ONE * (RADIUS / 32.0) * pulse
+	_body.scale = GenesisArt.scale_for(_body.texture, RADIUS * 4.0) * pulse
 
 
 ## Pushes the organism out to `distance` from a point, never closer. Used by the

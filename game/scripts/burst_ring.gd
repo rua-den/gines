@@ -13,6 +13,18 @@ var color := Color(1.0, 0.86, 0.46)
 var _t := 0.0
 
 
+func _ready() -> void:
+	var art := GenesisArt.frames("spike_burst")
+	if art == null or not art.has_animation(&"default"):
+		return
+	var anim := AnimatedSprite2D.new()
+	anim.name = "GeneratedBurst"
+	anim.sprite_frames = art
+	anim.scale = Vector2.ONE * target_radius / 128.0
+	add_child(anim)
+	anim.play(&"default")
+
+
 func _process(delta: float) -> void:
 	_t += delta
 	queue_redraw()

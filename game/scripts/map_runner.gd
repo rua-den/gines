@@ -43,6 +43,11 @@ var _raw_max := Vector2(-INF, -INF)
 
 
 func _ready() -> void:
+	if GenesisArt.texture("world_backdrop") != null:
+		var backdrop := CanvasLayer.new()
+		backdrop.layer = -2
+		add_child(backdrop)
+		GenesisArt.add_backdrop(backdrop, "world_map01", "world_backdrop")
 	var failures := load_map_data(_load_map())
 	if not failures.is_empty():
 		for f in failures:

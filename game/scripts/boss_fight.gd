@@ -241,6 +241,8 @@ func _build_background() -> void:
 	bg.color = BG
 	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
 	backdrop.add_child(bg)
+	if GenesisArt.add_backdrop(backdrop, "world_backdrop"):
+		return
 
 
 func _build_zone() -> void:
@@ -269,10 +271,10 @@ func _build_boss() -> void:
 
 func _build_gates() -> void:
 	gate = RoomBuilder.add_slab(self,
-		Rect2(GATE_X - 20.0, 60.0, 40.0, FLOOR_TOP - 60.0), GATE_FILL, GATE_EDGE)
+		Rect2(GATE_X - 20.0, 60.0, 40.0, FLOOR_TOP - 60.0), GATE_FILL, GATE_EDGE, "gate")
 	gate.name = "EvolutionGate"
 	route_gate = RoomBuilder.add_slab(self,
-		Rect2(ROUTE_X - 18.0, 60.0, 36.0, FLOOR_TOP - 60.0), ROUTE_FILL, ROUTE_EDGE)
+		Rect2(ROUTE_X - 18.0, 60.0, 36.0, FLOOR_TOP - 60.0), ROUTE_FILL, ROUTE_EDGE, "gate")
 	route_gate.name = "RouteGate"
 
 
@@ -329,7 +331,7 @@ func _make_hud_panel(rect: Rect2, accent: Color) -> Panel:
 	style.border_width_left = 3
 	style.border_color = accent
 	style.set_corner_radius_all(12)
-	panel.add_theme_stylebox_override("panel", style)
+	panel.add_theme_stylebox_override("panel", GenesisArt.panel_style(style))
 	return panel
 
 

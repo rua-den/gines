@@ -569,11 +569,12 @@ func _case_same_frame_rebuild_has_no_duplicates() -> void:
 			first, second, players, cameras, zones, huds, bosses])
 
 
-func _case_background_is_procedural() -> void:
+func _case_background_behind_gameplay() -> void:
 	# Shared MapStage code: removing _build_background() must fail this case.
 	var layer := _find_background_layer(_stage) if _stage != null else null
 	var base_count := 0
 	var gradient_count := 0
+	var generated_count := 0
 	if layer != null:
 		for child in layer.get_children():
 			if child is ColorRect:
@@ -582,18 +583,25 @@ func _case_background_is_procedural() -> void:
 				if (child as Sprite2D).texture is GradientTexture2D:
 					gradient_count += 1
 			elif child is TextureRect:
-				if (child as TextureRect).texture is GradientTexture2D:
+				var image := child as TextureRect
+				if image.texture is GradientTexture2D:
 					gradient_count += 1
+				elif image.name == "GeneratedBackdrop" and image.texture != null \
+						and image.mouse_filter == Control.MOUSE_FILTER_IGNORE:
+					generated_count += 1
 	var hud_layer_ok := false
 	if _stage != null:
 		for node in _stage.find_children("*", "CanvasLayer", true, false):
 			if (node as CanvasLayer).layer == 10:
 				hud_layer_ok = true
 				break
-	var ok: bool = layer != null and base_count >= 1 and gradient_count >= 2 and hud_layer_ok
-	_check("procedural gradient background sits behind gameplay", ok,
-		"layer=%s base=%d gradients=%d hud=%s" % [
-			"layer=-2" if layer != null else "<none>", base_count, gradient_count, hud_layer_ok])
+	var uses_art := GenesisArt.texture("world_map03") != null \
+		or GenesisArt.texture("world_backdrop") != null
+	var backdrop_ok := generated_count == 1 if uses_art else base_count >= 1 and gradient_count >= 2
+	_check("background sits behind gameplay", layer != null and backdrop_ok and hud_layer_ok,
+		"layer=%s base=%d gradients=%d generated=%d hud=%s" % [
+			"layer=-2" if layer != null else "<none>", base_count, gradient_count,
+			generated_count, hud_layer_ok])
 
 
 # ------------------------------------------------------------- pause cases
@@ -746,7 +754,7 @@ func _init() -> void:
 	await _case_unknown_json_key_rejected()
 	await _case_note_annotation_is_accepted()
 	await _case_same_frame_rebuild_has_no_duplicates()
-	await _case_background_is_procedural()
+	await _case_background_behind_gameplay()
 	await _case_pause_opens()
 	await _case_resume_closes()
 	await _case_pause_restart()
