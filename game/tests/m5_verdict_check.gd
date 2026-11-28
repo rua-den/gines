@@ -11,7 +11,7 @@ extends SceneTree
 ##     --script res://tests/m5_verdict_check.gd
 ## Exit code 0 = all cases pass, 1 = at least one failure.
 
-const EXPECTED_CASES := 5
+const EXPECTED_CASES := 8
 const GOOD_SHOTS := ["approach", "telegraph", "weak-window", "victory"]
 
 var _passed := 0
@@ -49,9 +49,24 @@ func _case(label: String, evolved: bool, defeated: bool, shots: Array,
 		"PASS" if ok else "FAIL", label, expect_ok, failures])
 
 
+func _watchdog_is_valid(boss_timeout: float, map_timeout: float) -> bool:
+	# Preserve the original 90 s resource-loaded M5 floor and track map cadence.
+	return boss_timeout >= 90.0 and map_timeout > 0.0 and boss_timeout >= map_timeout
+
+
+func _case_watchdog(label: String, boss_timeout: float, map_timeout: float,
+		expected: bool) -> void:
+	var ok := _watchdog_is_valid(boss_timeout, map_timeout) == expected
+	if ok:
+		_passed += 1
+	else:
+		_failed += 1
+	print("[T] %s %-42s M5=%.0f map=%.0f expected=%s" % [
+		"PASS" if ok else "FAIL", label, boss_timeout, map_timeout, expected])
+
+
 func _case_demo_watchdog_tracks_map_stage() -> void:
-	# Keep M5's failure watchdog at least as generous as the full map demos.
-	# Read both live script constants so a future cadence change cannot drift.
+	# Read both live script constants so cadence changes cannot drift unnoticed.
 	var scene: Node = load("res://scenes/boss_test.tscn").instantiate()
 	var boss_script := scene.get_script() as GDScript
 	var boss_constants: Dictionary = boss_script.get_script_constant_map() if boss_script != null else {}
@@ -60,13 +75,11 @@ func _case_demo_watchdog_tracks_map_stage() -> void:
 	var map_constants: Dictionary = map_script.get_script_constant_map() if map_script != null else {}
 	var map_timeout := float(map_constants.get("DEMO_TIMEOUT", 0.0))
 	scene.free()
-	var ok: bool = map_timeout > 0.0 and boss_timeout >= map_timeout
-	if ok:
-		_passed += 1
-	else:
-		_failed += 1
-	print("[T] %s M5 demo watchdog tracks map-stage watchdog  M5=%.0f map=%.0f" % [
-		"PASS" if ok else "FAIL", boss_timeout, map_timeout])
+	_case_watchdog("live M5 timeout preserves floor and parity",
+		boss_timeout, map_timeout, true)
+	_case_watchdog("90/90 is valid", 90.0, 90.0, true)
+	_case_watchdog("shorter than map timeout is rejected", 90.0, 91.0, false)
+	_case_watchdog("45/45 violates M5 floor", 45.0, 45.0, false)
 
 
 func _init() -> void:
