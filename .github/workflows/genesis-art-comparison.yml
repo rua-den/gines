@@ -21,7 +21,7 @@ jobs:
           persist-credentials: false
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
-          ref: db4ba1209610e7e73d550001415b924dc2b4a51a
+          ref: 99d307004f0746428547003487cb7837dbb04fab
           path: after
           persist-credentials: false
       - name: Capture actual Godot windows at identical paths and camera coordinates
