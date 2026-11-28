@@ -12,6 +12,11 @@ const RADIUS := 120.0
 var used := false
 
 var _t := 0.0
+var _art: Texture2D
+
+
+func _ready() -> void:
+	_art = GenesisArt.texture("evolution_zone")
 
 
 func in_range(pos: Vector2) -> bool:
@@ -29,6 +34,11 @@ func _process(delta: float) -> void:
 
 func _draw() -> void:
 	var pulse := 0.5 + 0.5 * sin(_t * 1.6)
+	if _art != null:
+		var bounds := Rect2(Vector2(-RADIUS, -RADIUS), Vector2.ONE * 2.0 * RADIUS)
+		var alpha := (0.42 if used else 0.85) + 0.1 * pulse
+		draw_texture_rect(_art, bounds, false, Color(1.0, 1.0, 1.0, alpha))
+		return
 	var base := Color(0.95, 0.62, 0.22) if used else Color(0.95, 0.76, 0.31)
 	# Ring plus a soft inner wash; both dim once the site has been used.
 	draw_circle(Vector2.ZERO, RADIUS, Color(base.r, base.g, base.b, 0.06 + 0.05 * pulse))

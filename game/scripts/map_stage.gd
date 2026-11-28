@@ -241,7 +241,7 @@ func _build_pause_overlay() -> void:
 	style.border_color = HUD_GOLD
 	style.set_border_width_all(2)
 	style.set_corner_radius_all(12)
-	panel.add_theme_stylebox_override("panel", style)
+	panel.add_theme_stylebox_override("panel", GenesisArt.panel_style(style))
 	layer.add_child(panel)
 	var heading := _make_label("PAUSED", 24, HUD_TEAL)
 	heading.offset_top = 12.0
@@ -680,6 +680,8 @@ func _build_background() -> void:
 	layer.name = "BackgroundLayer"
 	layer.layer = -2
 	backdrop.add_child(layer)
+	if GenesisArt.add_backdrop(layer, "world_" + map_id, "world_backdrop"):
+		return
 	var tint: Color = BACKGROUND_TINTS.get(map_id, BACKGROUND_DEFAULT_TINT)
 	var base := ColorRect.new()
 	base.color = BACKGROUND_BASE
@@ -729,15 +731,19 @@ func _build_slabs(data: Dictionary) -> void:
 			float(rect_values[2]), float(rect_values[3]))
 		var color := RoomBuilder.SLAB
 		var edge := RoomBuilder.SLAB_EDGE
+		var obstacle_id := str(obstacle.get("id", ""))
+		var material_key := "growth" if obstacle_id.contains("platform") else "stone"
 		# `gate` and `hazard_zone` are still real slabs: they are never silently
 		# skipped. Hazard damage remains an Open item; for now they are inert.
 		if kind == "gate":
 			color = GATE_FILL
 			edge = GATE_EDGE
+			material_key = "gate"
 		elif kind == "hazard_zone":
 			color = HAZARD_FILL
 			edge = HAZARD_EDGE
-		var slab := RoomBuilder.add_slab(self, rect, color, edge)
+			material_key = "hazard"
+		var slab := RoomBuilder.add_slab(self, rect, color, edge, material_key)
 		slab.name = "Slab%d" % i
 		slabs.append(slab)
 		if kind == "gate":
@@ -751,6 +757,9 @@ func _build_player(data: Dictionary) -> void:
 	_checkpoint_pos = default_checkpoint
 	if pos.size() >= 2:
 		_checkpoint_pos = Vector2(float(pos[0]), float(pos[1]))
+	var markers := get_node_or_null("Backdrop")
+	if markers != null:
+		GenesisArt.add_marker(markers, "checkpoint", _checkpoint_pos + Vector2(0.0, 56.0), 46.0)
 	var packed: PackedScene = load(PLAYER_SCENE)
 	if packed == null:
 		push_error(log_prefix() + " cannot load " + PLAYER_SCENE)
@@ -984,11 +993,19 @@ func _on_boss_defeated() -> void:
 		completion_marker.position = Vector2(1180.0, 300.0)
 		completion_marker.offset_right = 1700.0
 		add_child(completion_marker)
+		GenesisArt.add_marker(completion_marker, "goal", Vector2(-26.0, 15.0), 36.0)
 	print(log_prefix(), " REGION COMPLETE")
 
 
-func _on_burst_fired(_at: Vector2) -> void:
+func _on_burst_fired(at: Vector2) -> void:
 	_bursts += 1
+	# Presentation only: count and damage remain owned by the accepted burst.
+	var effects := get_node_or_null("Backdrop")
+	if effects != null and GenesisArt.frames("spike_burst") != null:
+		var accent := BurstRing.new()
+		accent.target_radius = PlayerController.BURST_RANGE
+		effects.add_child(accent)
+		accent.global_position = at
 
 
 ## Shelter retry: restore the player and the boss, never roll back progress.

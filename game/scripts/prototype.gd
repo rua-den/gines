@@ -256,6 +256,8 @@ func _build_background() -> void:
 	bg.color = BG
 	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
 	backdrop.add_child(bg)
+	if GenesisArt.add_backdrop(backdrop, "world_backdrop"):
+		return
 	var blob_tex := _radial_texture([
 		[0.0, Color(0.16, 0.42, 0.38, 0.5)],
 		[1.0, Color(0.16, 0.42, 0.38, 0.0)],
@@ -357,7 +359,7 @@ func _make_hud_panel(rect: Rect2, accent: Color) -> Panel:
 	style.border_width_left = 3
 	style.border_color = accent
 	style.set_corner_radius_all(12)
-	panel.add_theme_stylebox_override("panel", style)
+	panel.add_theme_stylebox_override("panel", GenesisArt.panel_style(style))
 	return panel
 
 

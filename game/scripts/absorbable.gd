@@ -32,6 +32,13 @@ func _ready() -> void:
 	add_to_group(GROUP)
 	_origin = position
 	_body = Sprite2D.new()
+	var art := GenesisArt.texture("mote")
+	if art != null:
+		_body.name = "GeneratedBody"
+		_body.texture = art
+		_body.scale = GenesisArt.scale_for(art, radius * 2.0)
+		add_child(_body)
+		return
 	var grad := Gradient.new()
 	grad.set_color(0, Color(1.0, 0.93, 0.62, 0.95))
 	grad.set_color(1, Color(0.98, 0.72, 0.22, 0.0))
@@ -56,7 +63,7 @@ func _process(delta: float) -> void:
 		if _burst > 0.0:
 			_burst = maxf(_burst - delta * 3.0, 0.0)
 			var grow: float = 1.0 + (1.0 - _burst) * 1.2
-			_body.scale = Vector2.ONE * (radius / 32.0) * grow
+			_body.scale = GenesisArt.scale_for(_body.texture, radius * 2.0) * grow
 			_body.modulate.a = _burst
 		else:
 			_body.visible = false
@@ -66,7 +73,7 @@ func _process(delta: float) -> void:
 	# Pulse faster while being channelled so the cost is visible.
 	var rate := 2.0 + progress * 6.0
 	var pulse := 0.85 + 0.15 * sin(_t * rate * TAU)
-	_body.scale = Vector2.ONE * (radius / 32.0) * pulse
+	_body.scale = GenesisArt.scale_for(_body.texture, radius * 2.0) * pulse
 
 
 func channel(delta: float) -> void:

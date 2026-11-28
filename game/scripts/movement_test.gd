@@ -126,6 +126,9 @@ func _build_background() -> void:
 	bg.color = BG
 	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
 	backdrop.add_child(bg)
+	if GenesisArt.add_backdrop(backdrop, "world_backdrop"):
+		_build_nutrient_stream(true)
+		return
 	# Soft membrane blobs drifting in world space.
 	var blob_tex: GradientTexture2D = _radial_texture(256, [
 		[0.0, Color(0.16, 0.42, 0.38, 0.55)],
@@ -143,21 +146,26 @@ func _build_background() -> void:
 		s.set_meta("base", def[0])
 		add_child(s)
 		_blobs.append(s)
-	# Amber nutrient stream along the floor.
-	var stream := ColorRect.new()
-	stream.color = Color(0.85, 0.62, 0.18, 0.35)
-	stream.position = Vector2(60, FLOOR_TOP - 14)
-	stream.size = Vector2(1800, 14)
-	add_child(stream)
-	var mote_tex: GradientTexture2D = _radial_texture(32, [
-		[0.0, Color(1.0, 0.85, 0.42, 0.9)],
-		[1.0, Color(1.0, 0.85, 0.42, 0.0)],
-	], Vector2(0.5, 0.5), Vector2(0.5, 1.0))
+	_build_nutrient_stream(false)
+
+
+func _build_nutrient_stream(authored: bool) -> void:
+	var mote_tex: Texture2D = GenesisArt.texture("mote") if authored else null
+	if mote_tex == null:
+		var stream := ColorRect.new()
+		stream.color = Color(0.85, 0.62, 0.18, 0.35)
+		stream.position = Vector2(60, FLOOR_TOP - 14)
+		stream.size = Vector2(1800, 14)
+		add_child(stream)
+		mote_tex = _radial_texture(32, [
+			[0.0, Color(1.0, 0.85, 0.42, 0.9)],
+			[1.0, Color(1.0, 0.85, 0.42, 0.0)],
+		], Vector2(0.5, 0.5), Vector2(0.5, 1.0))
 	for i in 24:
 		var m := Sprite2D.new()
 		m.texture = mote_tex
 		m.position = Vector2(randf_range(80, 1840), FLOOR_TOP - randf_range(4, 24))
-		m.scale = Vector2(0.35, 0.35)
+		m.scale = GenesisArt.scale_for(mote_tex, 11.2)
 		m.set_meta("speed", randf_range(12.0, 30.0))
 		add_child(m)
 		_motes.append(m)

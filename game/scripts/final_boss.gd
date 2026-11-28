@@ -33,6 +33,10 @@ func _init() -> void:
 	health = FINAL_MAX_HEALTH
 
 
+func _art_key() -> String:
+	return "final_boss"
+
+
 func max_health() -> int:
 	return FINAL_MAX_HEALTH
 

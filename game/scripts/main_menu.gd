@@ -105,7 +105,7 @@ func _make_panel(rect: Rect2, accent: Color) -> Panel:
 	style.border_width_left = 3
 	style.border_color = accent
 	style.set_corner_radius_all(12)
-	p.add_theme_stylebox_override("panel", style)
+	p.add_theme_stylebox_override("panel", GenesisArt.panel_style(style))
 	return p
 
 
@@ -121,11 +121,16 @@ func _make_label(text: String, font_size: int, color: Color, rect: Rect2) -> Lab
 
 
 func _build_ui() -> void:
+	var backdrop := CanvasLayer.new()
+	backdrop.name = "MenuBackdrop"
+	backdrop.layer = -2
+	add_child(backdrop)
 	var bg := ColorRect.new()
 	bg.color = BG
-	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
 	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(bg)
+	backdrop.add_child(bg)
+	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	GenesisArt.add_backdrop(backdrop, "menu_backdrop", "world_backdrop")
 
 	var ui := CanvasLayer.new()
 	ui.name = "UI"

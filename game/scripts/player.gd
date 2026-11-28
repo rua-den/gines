@@ -21,6 +21,8 @@ extends CharacterBody2D
 
 enum State { SWIM, CRAWL, GRIP }
 
+const AssetAudio := preload("res://scripts/asset_audio.gd")
+
 const SWIM_ACCEL := 900.0
 const SWIM_MAX := 260.0
 const SWIM_DAMP := 4.0
@@ -173,6 +175,8 @@ func _tick_absorb(delta: float) -> void:
 		absorb_target = null
 		var value := mote.consume()
 		nutrition += value
+		if value > 0.0:
+			AssetAudio.play(self, &"pickup")
 		nutrition_gained.emit(value)
 
 
@@ -193,6 +197,7 @@ func take_damage(amount: int, from_pos: Vector2) -> bool:
 	if away.length() < 0.001:
 		away = Vector2.UP
 	velocity = away.normalized() * KNOCKBACK
+	AssetAudio.play(self, &"death" if health == 0 else &"damage")
 	damaged.emit(health)
 	if health == 0:
 		dead = true
@@ -224,6 +229,7 @@ func evolve() -> bool:
 		return false
 	nutrition -= EVOLVE_COST
 	_apply_evolved(true)
+	AssetAudio.play(self, &"evolve")
 	evolved_now.emit()
 	return true
 
@@ -255,6 +261,7 @@ func spike_burst() -> bool:
 		return false
 	energy = maxf(energy - BURST_ENERGY_COST, 0.0)
 	_burst_cooldown = BURST_COOLDOWN
+	AssetAudio.play(self, &"burst")
 	burst_fired.emit(global_position)
 	# Predators are looked up by group rather than by type: predator.gd already
 	# depends on PlayerController, and a typed reference back would be cyclic.

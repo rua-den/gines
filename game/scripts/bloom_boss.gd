@@ -174,10 +174,21 @@ func _physics_process(delta: float) -> void:
 		phase = _next_phase()
 
 
+func _art_key() -> String:
+	return "bloom"
+
+
 func _build_visual() -> void:
 	# A larger, two-layer parasitic bloom: magenta/green radial petals around a
 	# bright core — deliberately distinct from predator.gd's single red disc.
 	_body = Sprite2D.new()
+	var art := GenesisArt.texture(_art_key())
+	if art != null:
+		_body.name = "GeneratedBody"
+		_body.texture = art
+		_body.scale = GenesisArt.scale_for(art, RADIUS * 4.0)
+		add_child(_body)
+		return
 	var grad := Gradient.new()
 	grad.set_color(0, Color(0.92, 0.22, 0.78, 1.0))
 	grad.set_color(1, Color(0.08, 0.30, 0.18, 0.0))
@@ -223,7 +234,7 @@ func _update_visual() -> void:
 			rate = 0.5
 	var alpha := 0.45 if phase == "exposed" else 1.0
 	var pulse := 0.94 + 0.06 * sin(_t * rate * TAU)
-	_body.scale = Vector2.ONE * (RADIUS / 32.0) * pulse
+	_body.scale = GenesisArt.scale_for(_body.texture, RADIUS * 4.0) * pulse
 	_body.modulate.a = alpha
 	if _core != null:
 		_core.scale = Vector2.ONE * (RADIUS / 64.0) * (0.9 + 0.1 * sin(_t * rate * TAU + 0.8))

@@ -13,6 +13,10 @@ var health := 1.0
 var gripped := false
 var evolved := false
 
+var _generated: Sprite2D
+var _generated_base: Texture2D
+var _generated_evolved: Texture2D
+
 var body: Sprite2D
 var nucleus_glow: Sprite2D
 var nucleus: Sprite2D
@@ -23,6 +27,15 @@ var _t := 0.0
 
 
 func _ready() -> void:
+	_generated_base = GenesisArt.texture("player_base")
+	_generated_evolved = GenesisArt.texture("player_evolved")
+	# Both states must be present to keep evolution visually distinct.
+	if _generated_base != null and _generated_evolved != null:
+		_generated = Sprite2D.new()
+		_generated.name = "GeneratedBody"
+		add_child(_generated)
+		set_evolved(evolved)
+		return
 	# Cilia first: drawn behind the body so hair roots hide under the rim.
 	cilia = preload("res://scripts/cilia.gd").new()
 	cilia.radius = BODY_R
@@ -124,6 +137,12 @@ func _radial_texture(size: int, stops: Array, from: Vector2, to: Vector2) -> Gra
 
 func set_evolved(value: bool) -> void:
 	evolved = value
+	if _generated != null:
+		_generated.texture = _generated_evolved if value else _generated_base
+		# Both authored textures have a 220 px membrane and transparent
+		# padding; the existing 0.5 parent scale keeps the 110 px body.
+		_generated.scale = GenesisArt.scale_for(_generated.texture, 256.0)
+		return
 	if spikes != null:
 		spikes.visible = value
 	if body != null:
@@ -148,6 +167,9 @@ func set_controlled(delta: float, dir: Vector2, speed_frac: float) -> void:
 	if dir.length() > 0.1:
 		target_rot = clampf(dir.x * 0.15, -0.15, 0.15)
 	rotation = lerp_angle(rotation, target_rot + 0.07 * sin(TAU * p + 0.7), 0.2)
+	if _generated != null:
+		_generated.modulate = Color.WHITE.lerp(Color(0.90, 0.70, 0.73), 1.0 - health)
+		return
 	var pulse := 0.5 + 0.5 * sin(TAU * p - 0.9)
 	nucleus_glow.scale = Vector2.ONE * (0.58 + 0.16 * pulse)
 	nucleus_glow.modulate.a = (0.42 + 0.28 * pulse) * (0.35 + 0.65 * health)
